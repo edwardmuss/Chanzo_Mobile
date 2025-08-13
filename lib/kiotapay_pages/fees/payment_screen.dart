@@ -5,7 +5,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:hive/hive.dart';
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:shimmer/shimmer.dart';
 
 import '../../globalclass/chanzo_color.dart';
 import '../../kiotapay_theme/kiotapay_themecontroller.dart';
@@ -33,27 +33,21 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
   void initState() {
     super.initState();
     _paymentController = PaymentController(widget.studentId);
-
-    // Check initial state
     _initConnectivity();
-
-    // Start listening for connectivity changes (multi-network support)
     _startConnectivityListener();
   }
 
   @override
   void dispose() {
     _connectivitySubscription.cancel();
+    _searchController.dispose();
     super.dispose();
   }
 
   Future<void> _initConnectivity() async {
     try {
       final connectivityResults = await Connectivity().checkConnectivity();
-
       final online = connectivityResults.any((r) => r != ConnectivityResult.none);
-
-      print("Initial active connections: $connectivityResults");
       _paymentController.isOnline.value = online;
     } catch (e) {
       print("Failed to check initial connectivity: $e");
@@ -65,66 +59,36 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
     _connectivitySubscription = Connectivity()
         .onConnectivityChanged
         .listen((results) {
-      // For multi-network: results is List<ConnectivityResult>
       final activeConnections = results
           .where((r) => r != ConnectivityResult.none)
           .toList();
-
       final online = activeConnections.isNotEmpty;
       _paymentController.isOnline.value = online;
-
-      print("Connectivity changed: $activeConnections, online = $online");
-
-      // Log each active connection type
-      for (var connection in activeConnections) {
-        switch (connection) {
-          case ConnectivityResult.wifi:
-            print("Connected to Wi-Fi");
-            break;
-          case ConnectivityResult.mobile:
-            print("Connected to Mobile Data");
-            break;
-          case ConnectivityResult.ethernet:
-            print("Connected to Ethernet");
-            break;
-          case ConnectivityResult.vpn:
-            print("Connected through VPN");
-            break;
-          default:
-            print("Unknown connection: $connection");
-        }
-      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
+    // _paymentController.isLoading.value = true;
+
     return Scaffold(
       appBar: AppBar(
         title: Obx(() => _searchQuery.value.isEmpty
-            ? Text('Recent Payments')
-            : TextField(
-          controller: _searchController,
-          decoration: InputDecoration(
-            hintText: 'Search payments...',
-            border: InputBorder.none,
-            hintStyle: TextStyle(color: Colors.white70),
-          ),
-          style: TextStyle(color: Colors.white),
-          autofocus: true,
-          onChanged: (value) => _searchQuery.value = value.toLowerCase(),
-        )),
+            ? const Text('Payment History', style: TextStyle(fontWeight: FontWeight.w600))
+            : _buildSearchField(isDarkMode)),
+        centerTitle: false,
+        elevation: 0,
         actions: [
           IconButton(
-            icon: Obx(() => _searchQuery.value.isEmpty
-                ? Icon(Icons.search)
-                : Icon(Icons.close)),
+            icon: const Icon(Icons.search, color: Colors.white),
             onPressed: _handleSearchAction,
           ),
           IconButton(
-            icon: Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh, color: Colors.white),
             onPressed: () {
-              _selectedRange.value = 'all'; // Reset filter to 'All'
+              _selectedRange.value = 'all';
               _paymentController.fetchPayments(refresh: true, range: 'all');
             },
           ),
@@ -133,96 +97,298 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
       body: GetBuilder<PaymentController>(
         init: _paymentController,
         builder: (controller) {
-          // Show loading only during initial load
-          if (controller.isLoading.value && controller.payments.isEmpty) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          // Show error if no data
-          if (controller.errorMessage.value.isNotEmpty && controller.payments.isEmpty) {
-            return _buildErrorState(controller);
-          }
-
-          // Show loading while refreshing
-          if (controller.isRefreshing.value) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          // Avoid showing empty state while refreshing
-          if (!controller.isLoading.value &&
-              !controller.isRefreshing.value &&
-              controller.payments.isEmpty) {
-            return _buildEmptyState(controller);
-          }
-
-          // Show actual content
           return Column(
             children: [
               _buildOfflineBanner(controller),
-          SizedBox(height: 20),
-          _buildFilterChips(),
-              Expanded(
-                child: RefreshIndicator(
-                  onRefresh: () => controller.refreshPayments(),
-                  child: _buildPaymentList(controller),
+              _buildFilterChips(),
+              if (controller.isLoading.value || controller.isRefreshing.value)
+                Expanded(child: _buildShimmerEffect()),
+              if (!controller.isLoading.value && !controller.isRefreshing.value)
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: () => controller.refreshPayments(),
+                    color: theme.primaryColor,
+                    child: _buildPaymentContent(controller, theme),
+                  ),
                 ),
-              ),
             ],
           );
         },
       ),
     );
   }
+
+  Widget _buildShimmerEffect() {
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      itemCount: 6,
+      itemBuilder: (context, index) {
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          elevation: 0,
+          child: Shimmer.fromColors(
+            baseColor: Colors.grey[300]!,
+            highlightColor: Colors.grey[100]!,
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: double.infinity,
+                    height: 20,
+                    color: Colors.white,
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    width: 100,
+                    height: 16,
+                    color: Colors.white,
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    width: 200,
+                    height: 16,
+                    color: Colors.white,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildPaymentContent(PaymentController controller, ThemeData theme) {
+    final filteredPayments = _getFilteredPayments(controller);
+
+    // Show shimmer if loading or refreshing
+    if (controller.isLoading.value || controller.isRefreshing.value) {
+      return _buildShimmerEffect();
+    }
+
+    // Show error state if there's an error and no payments
+    if (controller.errorMessage.value.isNotEmpty && controller.payments.isEmpty) {
+      return _buildErrorState(controller);
+    }
+
+    // Show empty state if no payments (filtered or unfiltered)
+    if (filteredPayments.isEmpty) {
+      return _buildEmptyState(controller);
+    }
+
+    // Otherwise show the payment list
+    return _buildPaymentList(controller, theme);
+  }
+
+  Widget _buildLoadingState() {
+    return const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(),
+          SizedBox(height: 16),
+          Text('Loading payments...'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSearchField(bool isDarkMode) {
+    return TextField(
+      controller: _searchController,
+      decoration: InputDecoration(
+        hintText: 'Search payments...',
+        border: InputBorder.none,
+        hintStyle: TextStyle(color: isDarkMode ? Colors.white70 : Colors.black54),
+      ),
+      style: TextStyle(color: isDarkMode ? Colors.white : Colors.black),
+      autofocus: true,
+      onChanged: (value) => _searchQuery.value = value.toLowerCase(),
+    );
+  }
+
   Widget _buildFilterChips() {
     final filters = {
       'all': 'All',
-      '7_days': '7 Days',
+      '7_days': 'Last 7 Days',
       'last_month': 'Last Month',
       'last_year': 'Last Year',
     };
 
-    return SizedBox(
-      height: 40, // Adjust height as needed
-      child: SingleChildScrollView(
+    return Container(
+      height: 50,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-        child: Row(
-          children: filters.entries.map((entry) {
-            return Obx(() => Padding(
-              padding: const EdgeInsets.only(right: 8.0),
-              child:ChoiceChip(
-                label: Text(entry.value),
-                selected: _selectedRange.value == entry.key,
-                selectedColor: ChanzoColors.primary,
-                labelStyle: TextStyle(
-                  color: _selectedRange.value == entry.key ? Colors.white : Colors.black,
-                ),
-                avatar: _selectedRange.value == entry.key
-                    ? Icon(Icons.check, color: Colors.white, size: 18)
-                    : null,
-                onSelected: (_) {
-                  _selectedRange.value = entry.key;
-                  _paymentController.fetchPayments(refresh: true, range: entry.key);
-                },
+        itemCount: filters.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final entry = filters.entries.elementAt(index);
+          return Obx(() => FilterChip(
+            label: Text(entry.value),
+            selected: _selectedRange.value == entry.key,
+            onSelected: (_) {
+              _selectedRange.value = entry.key;
+              _paymentController.fetchPayments(refresh: true, range: entry.key);
+            },
+            selectedColor: Theme.of(context).primaryColor.withOpacity(0.2),
+            checkmarkColor: Theme.of(context).primaryColor,
+            labelStyle: TextStyle(
+              color: _selectedRange.value == entry.key
+                  ? Theme.of(context).primaryColor
+                  : Theme.of(context).textTheme.bodyMedium?.color,
+            ),
+            backgroundColor: Theme.of(context).cardColor,
+            shape: StadiumBorder(
+              side: BorderSide(
+                color: _selectedRange.value == entry.key
+                    ? Theme.of(context).primaryColor
+                    : Theme.of(context).dividerColor,
               ),
-            ));
-          }).toList(),
+            ),
+          ));
+        },
+      ),
+    );
+  }
+
+  Widget _buildPaymentList(PaymentController controller, ThemeData theme) {
+    final filteredPayments = _getFilteredPayments(controller);
+    final currencyFormat = NumberFormat.currency(locale: 'en_US', symbol: 'KES');
+
+    return ListView.builder(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      itemCount: filteredPayments.length + (controller.hasMore.value ? 1 : 0),
+      itemBuilder: (context, index) {
+        if (index == filteredPayments.length) {
+          return _buildLoadMoreButton(controller);
+        }
+
+        final payment = filteredPayments[index];
+        return _buildPaymentItem(payment, controller, theme, currencyFormat);
+      },
+    );
+  }
+
+  Widget _buildPaymentItem(Payment payment, PaymentController controller, ThemeData theme, NumberFormat currencyFormat) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: theme.dividerColor.withOpacity(0.1), width: 1),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => Get.to(() => PaymentDetailsScreen(
+          payment: payment,
+          isOnline: controller.isOnline.value,
+        )),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      payment.transId,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: _getMethodColor(payment.method, theme),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      payment.method.toUpperCase(),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Icon(Icons.attach_money, size: 16, color: theme.primaryColor),
+                  const SizedBox(width: 4),
+                  Text(
+                    currencyFormat.format(payment.amount),
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Icon(Icons.calendar_today, size: 16, color: theme.hintColor),
+                  const SizedBox(width: 4),
+                  Text(
+                    DateFormat('MMM dd, yyyy - hh:mm a').format(payment.paymentDate),
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ],
+              ),
+              if (!controller.isOnline.value) _buildCachedIndicator(theme),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildLoadMoreSection(PaymentController controller) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Center(
-        child: controller.isLoading.value
-            ? CircularProgressIndicator()
-            : ElevatedButton(
-          onPressed: () => controller.fetchPayments(),
-          child: Text('Load More'),
+  Widget _buildEmptyState(PaymentController controller) {
+    return ListView(
+      children: [
+        SizedBox(height: MediaQuery.of(context).size.height * 0.2),
+        Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.receipt_long, size: 48, color: Colors.grey),
+              const SizedBox(height: 16),
+              Text(
+                'No Payments Found',
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: _resetAndRefresh,
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  backgroundColor: Theme.of(context).primaryColor,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                ),
+                child: const Text(
+                  'Refresh',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
+      ],
     );
   }
 
@@ -252,241 +418,53 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
     }
   }
 
-  Future<void> _handleRefresh() async {
-    try {
-      await _paymentController.refreshPayments();
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Refresh failed: ${e.toString()}')),
-      );
-    }
-  }
-
   Widget _buildOfflineBanner(PaymentController controller) {
     return Obx(() => !controller.isOnline.value
         ? Container(
-      padding: EdgeInsets.all(8),
-      color: Colors.amber,
+      padding: const EdgeInsets.all(12),
+      width: double.infinity,
+      color: Colors.amber.withOpacity(0.1),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.wifi_off, size: 16),
-          SizedBox(width: 8),
-          Text('Offline Mode - Showing cached data'),
+          Icon(Icons.wifi_off, size: 16, color: Colors.amber.shade800),
+          const SizedBox(width: 8),
+          Text(
+            'Offline Mode - Showing cached data',
+            style: TextStyle(color: Colors.amber.shade800),
+          ),
         ],
       ),
     )
-        : SizedBox.shrink());
+        : const SizedBox.shrink());
   }
 
-  Widget _buildPaymentItem(Payment payment, PaymentController controller) {
-    return InkWell(
-      onTap: () => Get.to(() => PaymentDetailsScreen(
-        payment: payment,
-        isOnline: controller.isOnline.value,
-      )),
-      child: Card(
-        margin: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        child: Padding(
-          padding: EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Flexible(
-                    child: Text(
-                      'TXN: ${payment.transId}',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  Chip(
-                    label: Text(
-                      payment.method.toUpperCase(),
-                      style: TextStyle(color: Colors.white),
-                    ),
-                    backgroundColor: ChanzoColors.primary,
-                  ),
-                ],
-              ),
-              SizedBox(height: 8),
-              Text(
-                'Amount: ${NumberFormat.currency(locale: 'en_US', symbol: 'KES').format(payment.amount)}',
-                style: TextStyle(fontSize: 14),
-              ),
-              SizedBox(height: 4),
-              Text(
-                'Date: ${DateFormat('dd MMM yyyy, hh:mm a').format(payment.paymentDate)}',
-                style: TextStyle(fontSize: 14, color: Colors.grey),
-              ),
-              SizedBox(height: 4),
-              Text(
-                'Type: ${payment.paymentType}',
-                style: TextStyle(fontSize: 14, color: Colors.grey),
-              ),
-              if (!controller.isOnline.value) _buildCachedIndicator(),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPaymentList(PaymentController controller) {
-    final filteredPayments = _getFilteredPayments(controller);
-
-    return NotificationListener<ScrollNotification>(
-      onNotification: (scrollNotification) {
-        // Auto-load when scrolled near bottom
-        if (scrollNotification.metrics.pixels >=
-            scrollNotification.metrics.maxScrollExtent - 200 &&
-            !controller.isLoading.value &&
-            controller.hasMore.value &&
-            _searchQuery.value.isEmpty) {
-          controller.fetchPayments();
-          return true;
-        }
-        return false;
-      },
-      child: ListView.builder(
-        physics: AlwaysScrollableScrollPhysics(),
-        itemCount: filteredPayments.length +
-            ((controller.hasMore.value && _searchQuery.value.isEmpty) ? 1 : 0),
-        itemBuilder: (context, index) {
-          if (index == filteredPayments.length) {
-            return _buildLoadMoreSection(controller);
-          }
-          return _buildPaymentItem(filteredPayments[index], controller);
-        },
-      ),
-    );
-  }
-
-  Widget _buildCachedIndicator() {
+  Widget _buildCachedIndicator(ThemeData theme) {
     return Padding(
-      padding: EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.only(top: 8),
       child: Row(
         children: [
           Icon(Icons.wifi_off, size: 14, color: Colors.amber),
-          SizedBox(width: 4),
-          Text('Cached',
-              style: TextStyle(fontSize: 12, color: Colors.amber.shade800)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPaymentItem2(Payment payment, KiotaPayThemecontroler themeController,
-      PaymentController controller) {
-    return InkWell(
-      onTap: () => Get.to(() => PaymentDetailsScreen(
-        payment: payment,
-        isOnline: controller.isOnline.value,
-      )),
-      child: Card(
-        margin: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        elevation: 2,
-        child: Padding(
-          padding: EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Flexible(
-                    child: Text(
-                      'TXN: ${payment.transId}',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  Chip(
-                    label: Text(
-                      payment.method.toUpperCase(),
-                      style: TextStyle(color: Colors.white),
-                    ),
-                    backgroundColor: ChanzoColors.primary,
-                  ),
-                ],
-              ),
-              SizedBox(height: 8),
-              Text(
-                'Amount: ${NumberFormat.currency(locale: 'en_US', symbol: 'KES').format(payment.amount)}',
-                style: TextStyle(fontSize: 14),
-              ),
-              SizedBox(height: 4),
-              Text(
-                'Date: ${DateFormat('dd MMM yyyy, hh:mm a').format(payment.paymentDate)}',
-                style: TextStyle(fontSize: 14, color: Colors.grey),
-              ),
-              SizedBox(height: 4),
-              Text(
-                'Type: ${payment.paymentType}',
-                style: TextStyle(fontSize: 14, color: Colors.grey),
-              ),
-              Obx(() => !_paymentController.isOnline.value
-                  ? Padding(
-                padding: EdgeInsets.only(top: 8),
-                child: Row(
-                  children: [
-                    Icon(Icons.wifi_off, size: 14, color: Colors.amber),
-                    SizedBox(width: 4),
-                    Text('Cached',
-                        style: TextStyle(
-                            fontSize: 12, color: Colors.amber.shade800)),
-                  ],
-                ),
-              )
-                  : SizedBox.shrink()),
-            ],
+          const SizedBox(width: 4),
+          Text(
+            'Showing cached data',
+            style: theme.textTheme.bodySmall?.copyWith(color: Colors.amber.shade800),
           ),
-        ),
+        ],
       ),
     );
   }
 
   Widget _buildLoadMoreButton(PaymentController controller) {
     return Padding(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.symmetric(vertical: 16),
       child: Center(
         child: controller.isLoading.value
-            ? CircularProgressIndicator()
-            : ElevatedButton(
+            ? const CircularProgressIndicator()
+            : TextButton(
           onPressed: controller.loadMore,
-          child: Text('Load More'),
+          child: const Text('Load More'),
         ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyState(PaymentController controller) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.receipt_long, size: 48, color: Colors.grey),
-          SizedBox(height: 16),
-          Text(
-            'No Payments Found',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 8),
-          if (controller.isLoading.value)
-            CircularProgressIndicator()
-          else
-            ElevatedButton(
-            onPressed: _resetAndRefresh,
-              child: Text('Refresh'),
-            ),
-        ],
       ),
     );
   }
@@ -502,27 +480,43 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(Icons.error_outline, size: 48, color: Colors.red),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           Text(
             'Error Loading Payments',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
           ),
-          SizedBox(height: 8),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 32),
-            child: Text(
-              controller.errorMessage.value,
-              textAlign: TextAlign.center,
-            ),
-          ),
-          SizedBox(height: 16),
+          const SizedBox(height: 8),
+          // Padding(
+          //   padding: const EdgeInsets.symmetric(horizontal: 32),
+          //   child: Text(
+          //     controller.errorMessage.value,
+          //     textAlign: TextAlign.center,
+          //     style: const TextStyle(color: Colors.grey),
+          //   ),
+          // ),
+          const SizedBox(height: 16),
           ElevatedButton(
             onPressed: _resetAndRefresh,
-            child: Text('Retry'),
+            child: const Text('Try Again'),
           ),
         ],
       ),
     );
+  }
+
+  Color _getMethodColor(String method, ThemeData theme) {
+    switch (method.toLowerCase()) {
+      case 'mpesa':
+        return const Color(0xFF00B300);
+      case 'cash':
+        return const Color(0xFF4CAF50);
+      case 'bank':
+        return const Color(0xFF2196F3);
+      case 'card':
+        return const Color(0xFF9C27B0);
+      default:
+        return theme.primaryColor;
+    }
   }
 }
 
@@ -535,7 +529,7 @@ class PaymentSearchDelegate extends SearchDelegate<String> {
   List<Widget> buildActions(BuildContext context) {
     return [
       IconButton(
-        icon: Icon(Icons.clear),
+        icon: const Icon(Icons.clear),
         onPressed: () {
           query = '';
         },
@@ -546,7 +540,7 @@ class PaymentSearchDelegate extends SearchDelegate<String> {
   @override
   Widget buildLeading(BuildContext context) {
     return IconButton(
-      icon: Icon(Icons.arrow_back),
+      icon: const Icon(Icons.arrow_back),
       onPressed: () {
         close(context, '');
       },
@@ -555,6 +549,9 @@ class PaymentSearchDelegate extends SearchDelegate<String> {
 
   @override
   Widget buildResults(BuildContext context) {
+    final theme = Theme.of(context);
+    final currencyFormat = NumberFormat.currency(locale: 'en_US', symbol: 'KES');
+
     final results = paymentController.payments.where((payment) {
       return payment.transId.toLowerCase().contains(query.toLowerCase()) ||
           payment.method.toLowerCase().contains(query.toLowerCase()) ||
@@ -565,38 +562,147 @@ class PaymentSearchDelegate extends SearchDelegate<String> {
               .contains(query.toLowerCase());
     }).toList();
 
-    return _buildSearchResults(results);
+    return _buildSearchResults(results, theme, currencyFormat);
   }
 
   @override
   Widget buildSuggestions(BuildContext context) {
+    if (query.isEmpty) {
+      return _buildRecentSearches();
+    }
     return buildResults(context);
   }
 
-  Widget _buildSearchResults(List<Payment> results) {
+  Widget _buildSearchResults(List<Payment> results, ThemeData theme, NumberFormat currencyFormat) {
     if (results.isEmpty) {
       return Center(
-        child: Text('No payments found for "$query"'),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.search_off, size: 48, color: theme.hintColor),
+            const SizedBox(height: 16),
+            Text(
+              'No payments found',
+              style: theme.textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Try a different search term',
+              style: theme.textTheme.bodyMedium?.copyWith(color: theme.hintColor),
+            ),
+          ],
+        ),
       );
     }
 
-    return ListView.builder(
+    return ListView.separated(
+      padding: const EdgeInsets.all(16),
       itemCount: results.length,
+      separatorBuilder: (context, index) => const Divider(height: 16),
       itemBuilder: (context, index) {
         final payment = results[index];
-        return ListTile(
-          title: Text('TXN: ${payment.transId}'),
-          subtitle: Text(
-              '${NumberFormat.currency(locale: 'en_US', symbol: 'KES').format(payment.amount)} - ${DateFormat('dd MMM yyyy').format(payment.paymentDate)}'),
-          onTap: () {
-            close(context, '');
-            Get.to(() => PaymentDetailsScreen(
-              payment: payment,
-              isOnline: paymentController.isOnline.value,
-            ));
-          },
-        );
+        return _buildSearchResultItem(payment, theme, currencyFormat);
       },
     );
+  }
+
+  Widget _buildSearchResultItem(Payment payment, ThemeData theme, NumberFormat currencyFormat) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: theme.dividerColor.withOpacity(0.1)),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () {
+          Get.to(() => PaymentDetailsScreen(
+            payment: payment,
+            isOnline: paymentController.isOnline.value,
+          ));
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      payment.transId,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: _getMethodColor(payment.method, theme),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      payment.method.toUpperCase(),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Icon(Icons.attach_money, size: 16, color: theme.primaryColor),
+                  const SizedBox(width: 4),
+                  Text(
+                    currencyFormat.format(payment.amount),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Icon(Icons.calendar_today, size: 16, color: theme.hintColor),
+                  const SizedBox(width: 4),
+                  Text(
+                    DateFormat('MMM dd, yyyy - hh:mm a').format(payment.paymentDate),
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRecentSearches() {
+    return const Center(
+      child: Text('Recent searches will appear here'),
+    );
+  }
+
+  Color _getMethodColor(String method, ThemeData theme) {
+    switch (method.toLowerCase()) {
+      case 'mpesa':
+        return const Color(0xFF00B300);
+      case 'cash':
+        return const Color(0xFF4CAF50);
+      case 'bank':
+        return const Color(0xFF2196F3);
+      case 'card':
+        return const Color(0xFF9C27B0);
+      default:
+        return theme.primaryColor;
+    }
   }
 }

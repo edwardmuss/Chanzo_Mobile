@@ -64,9 +64,9 @@ class _KiotaPayResetPasswordEmailState
       return;
     }
     var headers = {'Content-Type': 'application/json'};
-    var payload = {'email': emailCodeController.text.trim()};
+    var payload = {'username': emailCodeController.text.trim()};
     try {
-      var url = Uri.parse(KiotaPayConstants.generateForgotPasswordOtp);
+      var url = Uri.parse(KiotaPayConstants.forgotPassword);
       Map body = payload;
       http.Response response =
           await http.post(url, body: jsonEncode(body), headers: headers);
@@ -77,13 +77,17 @@ class _KiotaPayResetPasswordEmailState
         // await prefs?.setString('reset_password_token_1', json['msg']);
         hideLoading();
         emailCodeController.clear();
-        Get.to(() => KiotaPayResetPasswordEnterCode(token: json['msg'],));
-        print(json['msg']);
+        var success = jsonDecode(response.body)['message'] ?? "Please check your email or phone for link";
+        awesomeDialog(context, "Success", success.toString(), true,
+            DialogType.info, ChanzoColors.primary, btnOkOnPress: () {
+              hideLoading();
+            })
+          ..show();
+        // Get.to(() => KiotaPayResetPasswordEnterCode(token: json['msg'],));
+        // print(json['msg']);
       } else {
         var _error =
             jsonDecode(response.body)['message'] ?? "Unknown Error Occured";
-        // _dialog..dismiss();
-        // context.loaderOverlay.hide();
         hideLoading();
         awesomeDialog(context, "Error", _error.toString(), true,
             DialogType.error, ChanzoColors.secondary, btnOkOnPress: () {
@@ -94,14 +98,6 @@ class _KiotaPayResetPasswordEmailState
       }
     } catch (error) {
       hideLoading();
-      // Fluttertoast.showToast(
-      //     msg: "Something went wrong!",
-      //     toastLength: Toast.LENGTH_LONG,
-      //     gravity: ToastGravity.CENTER,
-      //     timeInSecForIosWeb: 1,
-      //     backgroundColor: Colors.red,
-      //     textColor: Colors.white,
-      //     fontSize: 16.0);
     }
   }
 
@@ -157,7 +153,7 @@ class _KiotaPayResetPasswordEmailState
                         style: Theme.of(context).textTheme.headlineSmall,
                       ),
                       Text(
-                        "Enter your account email address to get started".tr,
+                        "Enter your account email/username address to get started".tr,
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                       Form(
@@ -167,7 +163,7 @@ class _KiotaPayResetPasswordEmailState
                           children: [
                             const SizedBox(height: 40),
                             Text(
-                              "Email Address",
+                              "Email Address/Phone",
                               style: pregular.copyWith(
                                   fontSize: 14, color: ChanzoColors.textgrey),
                             ),
@@ -177,11 +173,21 @@ class _KiotaPayResetPasswordEmailState
                             TextFormField(
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
-                                    return 'Email address is required';
-                                  }else if(!value.contains("@")) {
-                                    return "Please enter a valid email";
+                                    return 'Email or phone number is required';
                                   }
-                                  return null;
+
+                                  // Simple email regex pattern
+                                  final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
+                                  // Simple phone number regex pattern (adjust as needed)
+                                  final phoneRegex = RegExp(r'^\+?\d{10,15}$');
+
+                                  if (emailRegex.hasMatch(value)) {
+                                    return null; // Valid email
+                                  } else if (phoneRegex.hasMatch(value)) {
+                                    return null; // Valid phone number
+                                  } else {
+                                    return 'Please enter a valid email or phone number';
+                                  }
                                 },
                                 controller: emailCodeController,
                                 scrollPadding: EdgeInsets.only(
@@ -194,7 +200,7 @@ class _KiotaPayResetPasswordEmailState
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(50),
                                   ),
-                                  hintText: 'Enter Email Address'.tr,
+                                  hintText: 'Enter Email Address/Phone'.tr,
                                   hintStyle: pregular.copyWith(fontSize: 14),
                                   prefixIcon: Padding(
                                       padding: const EdgeInsets.all(14),

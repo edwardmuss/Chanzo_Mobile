@@ -37,8 +37,8 @@ class TextIconButton extends StatelessWidget {
             splashColor: ChanzoColors.primary, // Splash color
             onTap: onPressed,
             child: SizedBox(
-              width: size ?? 50,
-              height: size ?? 50,
+              width: size ?? 40,
+              height: size ?? 40,
               child: Icon(
                 icon,
                 size: iconSize ?? 20,
@@ -60,7 +60,7 @@ class TextIconButton extends StatelessWidget {
             style: pregular_sm.copyWith(color: ChanzoColors.textgrey),
           ),
           Icon(
-            leftIcon,
+            leftIcon ?? Icons.chevron_right,
             size: 20,
             color: ChanzoColors.primary,
           ),

@@ -1,6 +1,6 @@
 class KiotaPayConstants {
   static final String currency = "KES ";
-  static final bool isLive = true;
+  static final bool isLive = false;
   static final String apiKey = "DA527730128F5D641283CEE7C36D59";
   static final String apiSecret =
       "a1a9bc3892f6c3f18a1de1f8d6bb1be0e947947e3beac1ef325b08039b89bfcb147f7f81acf93c105380ec0531786df68a39";
@@ -8,7 +8,7 @@ class KiotaPayConstants {
       'AAAAB3NzaC1yc2EAAAADAQABAAACAQD6CFJO3IXVJOFUwqdToHNwtmYTcsc1d9QMzj54LpUg893MfWD3lbBeKJACzmuB9Ubi+VSgPtxdZkQzTR2cxYBig35JHBkD2vYjiElyQQ58H9Hg/bk8bMsLAik2EVcVM9UJ2mvlS4zCV9Gh7KHKHznBZ9YTPe3Y8mWl+NA4i+ZE9G1YvrPYW1llpXzA+EE8uF2UBHLMFJ5qnXjLCiSJLOJHPh923SYqXOgk+cc84JM71yVE8xhxEKF1B3eTAMEVbWUv7kAnZVwXv7KyQrZQpYAsgAtMQ0BY0l2BUqlv3o8HkLiCcgOqNhdnj4vPGFU5kPXa19Zfrxa1BH4I3Pzvky+V8biq3uHzuzOSEipSlIz0+JGnUgKuI5GPu7SM/SnoCKFl5elYMTU84lFQIalqBKmtyNNsgQhQZaMQN4SdlwkkqXYHC/Gg5OMDVaongphma5xUNkYujN5JpfF4oEzaEEQeB7v/qGr2bIsj9+/IbOe2wW+yXOsiokDu5X+mRQ8NhD5RhMB6W0EWdDZmQ1wqhX4LMRLPxClXFU3XY3sEb6cu/FtEGIhSMoQ9zY9XRhKUdjzjwFdhNnbNqPjiU1bZJQFbiI+bQylYXCJof87cwnRN2gOTXFczYtfakkK6rW3uLk70dTSYxhejwJx2To3Ql8eV1kai+MF1eSR19QFnNGXTMQ';
   static final String baseUrl = isLive
       ? 'https://app.chanzo.co.ke/api/v1/'
-      : 'https://6d3bc3924a5b.ngrok-free.app/chanzo_v2/public/api/v1/';
+      : 'https://1b8210623079.ngrok-free.app/chanzo_v2/public/api/v1/';
 
   static String webUrl = baseUrl.replaceAll(RegExp(r'api/v1/$'), '');
   static String fileBaseUrl = webUrl + 'storage';
@@ -22,6 +22,7 @@ class KiotaPayConstants {
   // Finance and Fee Management
   static final String getStudentFee = baseUrl + 'fees/student';
   static final String getStudentFeePdf = baseUrl + 'fees/structure/generate';
+  static final String getStudentFeeReceiptPdf = baseUrl + 'fees/structure/generate/receipt';
   static final String getRecentPayments = baseUrl + 'fees/student-payments/{student_id}';
   static final String getRecentYearlyPayments = baseUrl + 'fees/student-payments/monthly/{student_id}';
   static final String getPaymentsMethods = baseUrl + 'fees/payment-settings';
@@ -46,6 +47,9 @@ class KiotaPayConstants {
 
   // Calendar
   static final String getCalendar = baseUrl + 'calendar';
+
+  // Notifications
+  static final String getNotifications = baseUrl + 'notifications';
 
   // Examination
   static final String getStudentPerformance = baseUrl + 'exams/student-exam-performance';

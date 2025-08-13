@@ -190,6 +190,7 @@ class _ChatPageScreenState extends State<ChatPageScreen> {
                 if (jsonLine["node"] == "agent" && jsonLine["data"] != null) {
                   streamedText += jsonLine["data"];
                   setState(() {
+                    isThinking = false;
                     if (isFirstChunk) {
                       messages.add({
                         "type": "ai",
@@ -276,37 +277,7 @@ class _ChatPageScreenState extends State<ChatPageScreen> {
             bottomRight: Radius.circular(12),
           ),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              height: 12,
-              width: 12,
-              margin: EdgeInsets.only(right: 4),
-              decoration: BoxDecoration(
-                color: Colors.grey[600],
-                shape: BoxShape.circle,
-              ),
-            ),
-            Container(
-              height: 12,
-              width: 12,
-              margin: EdgeInsets.only(right: 4),
-              decoration: BoxDecoration(
-                color: Colors.grey[600],
-                shape: BoxShape.circle,
-              ),
-            ),
-            Container(
-              height: 12,
-              width: 12,
-              decoration: BoxDecoration(
-                color: Colors.grey[600],
-                shape: BoxShape.circle,
-              ),
-            ),
-          ],
-        ),
+        child: _AnimatedTypingDots(),
       ),
     );
   }
@@ -392,6 +363,21 @@ class _ChatPageScreenState extends State<ChatPageScreen> {
     });
   }
 
+  Widget _buildPromptButton(String label) {
+    return ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      ),
+      onPressed: () {
+        sendMessage(label); // directly send on click
+      },
+      child: Text(label),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final sortedMessages = [...messages];
@@ -447,20 +433,36 @@ class _ChatPageScreenState extends State<ChatPageScreen> {
             Expanded(
               child: showWelcome
                   ? Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.chat_bubble_outline,
-                              size: 48, color: Colors.grey),
-                          SizedBox(height: 16),
-                          Text(
-                            "How can I help you today?",
-                            style: TextStyle(
-                                fontSize: 18, color: Colors.grey[700]),
-                          ),
-                        ],
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.chat_bubble_outline, size: 48, color: Colors.grey),
+                    SizedBox(height: 16),
+                    Text(
+                      "How can I help you today?",
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                        color: Theme.of(context)
+                            .textTheme
+                            .headlineLarge
+                            ?.color,
                       ),
-                    )
+                    ),
+                    SizedBox(height: 24),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      alignment: WrapAlignment.center,
+                      children: [
+                        _buildPromptButton("My Child Strengths"),
+                        _buildPromptButton("Performance"),
+                        _buildPromptButton("Career Guidance"),
+                        _buildPromptButton("Analytics"),
+                      ],
+                    ),
+                  ],
+                ),
+              )
                   : ListView.builder(
                       controller: _scrollController,
                       reverse: false,
@@ -516,9 +518,28 @@ class _ChatPageScreenState extends State<ChatPageScreen> {
                             horizontal: 16,
                             vertical: 12,
                           ),
-                          suffixIcon: IconButton(
-                            icon: Icon(Icons.attach_file, color: Colors.grey),
-                            onPressed: () {},
+                          suffixIcon: Container(
+                            decoration: BoxDecoration(
+                              color: _controller.text.trim().isNotEmpty && !isThinking
+                                  ? Color(0xFF3B82F6)
+                                  : Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withAlpha(13),
+                              shape: BoxShape.circle,
+                            ),
+                            child: IconButton(
+                              icon: Icon(Icons.arrow_upward,
+                                  color:
+                                  _controller.text.trim().isNotEmpty && !isThinking
+                                      ? Colors.white
+                                      : Colors.grey),
+                              onPressed: () {
+                                if (_controller.text.trim().isNotEmpty && !isThinking) {
+                                  sendMessage(_controller.text);
+                                }
+                              },
+                            ),
                           ),
                         ),
                         minLines: 1,
@@ -531,30 +552,30 @@ class _ChatPageScreenState extends State<ChatPageScreen> {
                       ),
                     ),
                   ),
-                  SizedBox(width: 8),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: _controller.text.trim().isNotEmpty && !isThinking
-                          ? Color(0xFF3B82F6)
-                          : Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withAlpha(13),
-                      shape: BoxShape.circle,
-                    ),
-                    child: IconButton(
-                      icon: Icon(Icons.send,
-                          color:
-                              _controller.text.trim().isNotEmpty && !isThinking
-                                  ? Colors.white
-                                  : Colors.grey),
-                      onPressed: () {
-                        if (_controller.text.trim().isNotEmpty && !isThinking) {
-                          sendMessage(_controller.text);
-                        }
-                      },
-                    ),
-                  ),
+                  // SizedBox(width: 8),
+                  // Container(
+                  //   decoration: BoxDecoration(
+                  //     color: _controller.text.trim().isNotEmpty && !isThinking
+                  //         ? Color(0xFF3B82F6)
+                  //         : Theme.of(context)
+                  //             .colorScheme
+                  //             .onSurface
+                  //             .withAlpha(13),
+                  //     shape: BoxShape.circle,
+                  //   ),
+                  //   child: IconButton(
+                  //     icon: Icon(Icons.send,
+                  //         color:
+                  //             _controller.text.trim().isNotEmpty && !isThinking
+                  //                 ? Colors.white
+                  //                 : Colors.grey),
+                  //     onPressed: () {
+                  //       if (_controller.text.trim().isNotEmpty && !isThinking) {
+                  //         sendMessage(_controller.text);
+                  //       }
+                  //     },
+                  //   ),
+                  // ),
                 ],
               ),
             ),
@@ -564,3 +585,84 @@ class _ChatPageScreenState extends State<ChatPageScreen> {
     );
   }
 }
+
+class _AnimatedTypingDots extends StatefulWidget {
+  @override
+  State<_AnimatedTypingDots> createState() => _AnimatedTypingDotsState();
+}
+
+class _AnimatedTypingDotsState extends State<_AnimatedTypingDots>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _dot1, _dot2, _dot3;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 1200),
+    )..repeat();
+
+    _dot1 = Tween<double>(begin: 0, end: -4).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Interval(0.0, 0.3, curve: Curves.easeInOut),
+      ),
+    );
+
+    _dot2 = Tween<double>(begin: 0, end: -4).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Interval(0.2, 0.5, curve: Curves.easeInOut),
+      ),
+    );
+
+    _dot3 = Tween<double>(begin: 0, end: -4).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Interval(0.4, 0.7, curve: Curves.easeInOut),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Widget _buildDot(Animation<double> animation) {
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (context, child) {
+        return Transform.translate(
+          offset: Offset(0, animation.value),
+          child: child,
+        );
+      },
+      child: Container(
+        height: 12,
+        width: 12,
+        margin: EdgeInsets.only(right: 4),
+        decoration: BoxDecoration(
+          color: Colors.grey[600],
+          shape: BoxShape.circle,
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _buildDot(_dot1),
+        _buildDot(_dot2),
+        _buildDot(_dot3),
+      ],
+    );
+  }
+}
+

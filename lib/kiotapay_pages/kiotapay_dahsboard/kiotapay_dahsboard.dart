@@ -21,9 +21,9 @@ import '../finance/parent_dashboard.dart';
 
 // ignore: must_be_immutable
 class KiotaPayDashboard extends StatefulWidget {
-  String? index;
+  final String initialTab;
 
-  KiotaPayDashboard(this.index, {super.key});
+  KiotaPayDashboard(this.initialTab, {super.key});
 
   @override
   State<KiotaPayDashboard> createState() => _KiotaPayDashboardState();
@@ -41,10 +41,36 @@ class _KiotaPayDashboardState extends State<KiotaPayDashboard> with WidgetsBindi
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this); // Start listening for app lifecycle
+    WidgetsBinding.instance.addObserver(this);
+    _selectedItemIndex = int.tryParse(widget.initialTab) ?? 0; // Safe parsing
+    pageController = PageController(initialPage: _selectedItemIndex); // Initialize controller with initial page
+  }
+
+  @override
+  void didUpdateWidget(KiotaPayDashboard oldWidget) {
+    print('Dashboard updated from tab ${oldWidget.initialTab} to ${widget.initialTab}');
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialTab != widget.initialTab) {
+      final newIndex = int.tryParse(widget.initialTab) ?? 0;
+      if (newIndex != _selectedItemIndex) {
+        setState(() {
+          _selectedItemIndex = newIndex;
+        });
+        pageController.jumpToPage(newIndex);
+      }
+    }
+  }
+
+  void _onTap(int index) {
+    print('Tab tapped: $index, current index: $_selectedItemIndex');
     setState(() {
-      _selectedItemIndex = int.parse(widget.index!);
+      _selectedItemIndex = index;
     });
+    pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
   }
 
   @override
@@ -168,12 +194,6 @@ class _KiotaPayDashboardState extends State<KiotaPayDashboard> with WidgetsBindi
         ),
       ],
     );
-  }
-
-  void _onTap(int index) {
-    setState(() {
-      _selectedItemIndex = index;
-    });
   }
 
   Widget _bottomTabBar2() {
@@ -306,7 +326,16 @@ class _KiotaPayDashboardState extends State<KiotaPayDashboard> with WidgetsBindi
             ),
           ),
           bottomNavigationBar: _buildBottomBar(context),
-          body: _pages[_selectedItemIndex],
+          body: PageView(
+            controller: pageController,
+            physics: const NeverScrollableScrollPhysics(), // Disable swipe
+            children: _pages,
+            onPageChanged: (index) {
+              setState(() {
+                _selectedItemIndex = index;
+              });
+            },
+          ),
         );
       }),
     );

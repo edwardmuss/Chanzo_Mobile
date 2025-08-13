@@ -66,7 +66,7 @@ class KiotaPayAppBar extends StatelessWidget implements PreferredSizeWidget {
             ),
           ),
 
-          // Right side avatar
+          // Right side Notification bell
           Row(
             children: [
               const SizedBox(width: 10),

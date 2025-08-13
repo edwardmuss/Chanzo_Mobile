@@ -4,13 +4,12 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
+import 'package:hive/hive.dart';
 
 import '../../globalclass/kiotapay_constants.dart';
 import '../../models/payment_model.dart';
 import '../finance/monthly_payment_model.dart';
 import '../kiotapay_authentication/AuthController.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import 'package:hive/hive.dart';
 
 class PaymentController extends GetxController {
   final RxList<Payment> payments = <Payment>[].obs;
@@ -22,44 +21,40 @@ class PaymentController extends GetxController {
   final RxInt currentPage = 1.obs;
   final int studentId;
 
-  late Box<Payment>? _paymentBox;
+  late Box<PaymentResponse>? _paymentBox;
 
   PaymentController(this.studentId);
 
   final storage = const FlutterSecureStorage();
   final authController = Get.put(AuthController());
-  final RxInt totalItems = 0.obs; // Track total items count
-  final RxInt cachedPage = 1.obs; // Track cached pagination
+  final RxInt totalItems = 0.obs;
+  final RxInt cachedPage = 1.obs;
   final monthlyPayments = <MonthlyPayment>[].obs;
 
   @override
   Future<void> onInit() async {
     super.onInit();
-    if (!Hive.isBoxOpen('payments')) {
-      _paymentBox = await Hive.openBox<Payment>('payments');
-    } else {
-      _paymentBox = Hive.box('payments');
-    }
-    await loadCachedPayments(); // Load cached data first
-    fetchPayments(); // Then try to fetch fresh data
+    _paymentBox = await Hive.openBox<PaymentResponse>('paymentResponses');
+    await loadCachedPayments();
+    await fetchPayments();
   }
 
   Future<void> fetchPayments({bool refresh = false, String range = 'all'}) async {
     if ((isLoading.value && !refresh) || (isRefreshing.value && refresh)) return;
-
+    // isLoading.value = true;
     try {
-      errorMessage.value = '';
 
       if (refresh) {
         isRefreshing.value = true;
         currentPage.value = 1;
         cachedPage.value = 1;
         hasMore.value = true;
-        // payments.clear();
-        update();
       } else {
         isLoading.value = true;
       }
+
+      errorMessage.value = '';
+      update(); // Force UI update to show loading state
 
       if (range != 'all') {
         payments.clear();
@@ -75,12 +70,13 @@ class PaymentController extends GetxController {
             '&range=$range',
       );
 
-      final response = await http.get(url,
+      final response = await http.get(
+        url,
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
         },
-      ).timeout(Duration(seconds: 30));
+      ).timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final jsonResponse = json.decode(response.body);
@@ -88,19 +84,17 @@ class PaymentController extends GetxController {
 
         totalItems.value = paymentResponse.pagination.total;
 
-        if (paymentResponse.payments.isNotEmpty) {
+        if (paymentResponse.data.isNotEmpty) {
           if (refresh) {
-            payments.value = paymentResponse.payments;
-            await _cachePayments(paymentResponse.payments, clearExisting: true); // clear old
+            payments.value = paymentResponse.data;
+            await _cachePaymentResponse(paymentResponse, clearExisting: true);
           } else {
-            final newPayments = paymentResponse.payments.where(
-                    (newPayment) => !payments.any((p) => p.id == newPayment.id)
+            final newPayments = paymentResponse.data.where(
+                  (newPayment) => !payments.any((p) => p.id == newPayment.id),
             ).toList();
             payments.addAll(newPayments);
-            await _cachePayments(newPayments); // just append new ones
+            await _cachePaymentResponse(paymentResponse);
           }
-
-          // await _cachePayments(paymentResponse.payments);
 
           if (isOnline.value) {
             hasMore.value = currentPage.value < paymentResponse.pagination.lastPage;
@@ -120,56 +114,43 @@ class PaymentController extends GetxController {
       }
       rethrow;
     } finally {
+      // await Future.delayed(const Duration(milliseconds: 300));
       isLoading.value = false;
       isRefreshing.value = false;
       update();
     }
   }
 
-  Future<void> refreshPayments() async {
-    try {
-      await fetchPayments(refresh: true);
-    } catch (e) {
-      // Error will be shown through errorMessage
-      rethrow;
-    }
-  }
-
-  Future<void> _cachePayments(List<Payment> newPayments, {bool clearExisting = false}) async {
+  Future<void> _cachePaymentResponse(PaymentResponse paymentResponse, {bool clearExisting = false}) async {
     if (_paymentBox == null) return;
 
     try {
+      final cacheKey = 'student_${studentId}_payments';
+
       if (clearExisting) {
-        // Only clear if we're doing a full refresh
-        final toRemove = _paymentBox!.values.where((p) => p.studentId == studentId).toList();
-        for (final payment in toRemove) {
-          await _paymentBox!.delete(payment.id);
-        }
+        await _paymentBox!.delete(cacheKey);
       }
 
-      // Add/update new payments
-      for (final payment in newPayments) {
-        await _paymentBox!.put(payment.id, payment);
-      }
+      await _paymentBox!.put(cacheKey, paymentResponse);
     } catch (e) {
-      print('Error caching payments: $e');
+      print('Error caching payment response: $e');
     }
   }
-
 
   Future<void> loadCachedPayments() async {
     if (_paymentBox == null) return;
 
     try {
       isLoading.value = true;
-      final allCachedPayments = _paymentBox!.values.toList().cast<Payment>();
-      final studentPayments = allCachedPayments.where((p) => p.studentId == studentId).toList();
+      final cacheKey = 'student_${studentId}_payments';
+      final cachedResponse = _paymentBox!.get(cacheKey);
 
-      totalItems.value = studentPayments.length;
-      payments.value = studentPayments.take(4).toList(); // Initial load of 4 items
-
-      hasMore.value = payments.length < totalItems.value;
-      cachedPage.value = 2; // Start from page 2 for cached data
+      if (cachedResponse != null) {
+        totalItems.value = cachedResponse.pagination.total;
+        payments.value = cachedResponse.data.take(4).toList();
+        hasMore.value = payments.length < totalItems.value;
+        cachedPage.value = 2;
+      }
     } catch (e) {
       errorMessage.value = 'Failed to load cached payments';
     } finally {
@@ -182,23 +163,33 @@ class PaymentController extends GetxController {
 
     try {
       isLoading.value = true;
-      final allCachedPayments = _paymentBox!.values.toList().cast<Payment>();
-      final studentPayments = allCachedPayments.where((p) => p.studentId == studentId).toList();
+      final cacheKey = 'student_${studentId}_payments';
+      final cachedResponse = _paymentBox!.get(cacheKey);
 
-      final startIndex = (cachedPage.value - 1) * 4;
-      final endIndex = startIndex + 4;
-      final newPayments = studentPayments.sublist(
+      if (cachedResponse != null) {
+        final startIndex = (cachedPage.value - 1) * 4;
+        final endIndex = startIndex + 4;
+        final newPayments = cachedResponse.data.sublist(
           startIndex,
-          endIndex > studentPayments.length ? studentPayments.length : endIndex
-      );
+          endIndex > cachedResponse.data.length ? cachedResponse.data.length : endIndex,
+        );
 
-      payments.addAll(newPayments);
-      hasMore.value = payments.length < totalItems.value;
-      cachedPage.value++;
+        payments.addAll(newPayments);
+        hasMore.value = payments.length < totalItems.value;
+        cachedPage.value++;
+      }
     } catch (e) {
       errorMessage.value = 'Failed to load more cached payments';
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  Future<void> refreshPayments() async {
+    try {
+      await fetchPayments(refresh: true);
+    } catch (e) {
+      rethrow;
     }
   }
 
@@ -218,7 +209,8 @@ class PaymentController extends GetxController {
             .replaceFirst('{student_id}', studentId.toString()),
       );
 
-      final response = await http.get(url,
+      final response = await http.get(
+        url,
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -232,5 +224,11 @@ class PaymentController extends GetxController {
     } catch (e) {
       print('Error fetching monthly payments: $e');
     }
+  }
+
+  @override
+  void onClose() {
+    _paymentBox?.close();
+    super.onClose();
   }
 }

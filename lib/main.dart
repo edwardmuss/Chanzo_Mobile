@@ -1,7 +1,9 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:kiotapay/kiotapay_pages/kiotapay_authentication/kiotapay_splash.dart';
 import 'package:kiotapay/kiotapay_theme/kiotapay_theme.dart';
 import 'package:kiotapay/kiotapay_theme/kiotapay_themecontroller.dart';
 import 'package:kiotapay/kiotapay_translation/stringtranslation.dart';
+import 'package:provider/provider.dart';
 import '../kiotapay_pages/kiotapay_authentication/AuthController.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter/material.dart';
@@ -10,28 +12,55 @@ import 'package:get/get.dart';
 // import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
-import 'adapters/payment_adapter.dart';
+// import 'adapters/payment_adapter2.dart';
+import 'kiotapay_pages/notifications/notification_provider.dart';
+import 'kiotapay_pages/notifications/notification_service.dart';
 import 'models/payment_model.dart';
+late Box<Payment> paymentBox;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase
+  await Firebase.initializeApp();
+
+  // Initialize notifications
+  await NotificationService.initialize();
+
   // SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
 // Initialize ObjectBox
 //   final objectBox = await ObjectBox.create();
 //   objectBox = await ObjectBox.create();
 
   await Hive.initFlutter();
-  Hive.registerAdapter(PaymentAdapter());
-  // await Hive.openBox<Payment>('payments');
+  // await Hive.deleteBoxFromDisk('payments');
+  Hive
+    ..registerAdapter(PaymentResponseAdapter())
+    ..registerAdapter(PaymentAdapter())
+    ..registerAdapter(FeeCategoryAdapter())
+    ..registerAdapter(AccountAdapter())
+    ..registerAdapter(StudentAdapter())
+    ..registerAdapter(BranchAdapter())
+    ..registerAdapter(PaginationAdapter());
+  paymentBox = await Hive.openBox<Payment>('payments');
+  // await paymentBox.clear();
 
   // Register AuthController so it's available everywhere
   Get.put(AuthController());
+  // Get.put<Box<Payment>>(paymentBox);
 
   SystemChrome.setPreferredOrientations(
       [DeviceOrientation.portraitDown, DeviceOrientation.portraitUp]);
   EasyLoading.init();
 
-  runApp(MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => NotificationProvider()),
+      ],
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatefulWidget {

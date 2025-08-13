@@ -46,6 +46,8 @@ import '../fees/payment_methods_screen.dart';
 import '../fees/payment_screen.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 
+import '../kiotapay_dahsboard/kiotapay_dahsboard.dart';
+
 class KiotaPayHome extends StatefulWidget {
   const KiotaPayHome({super.key});
 
@@ -551,7 +553,7 @@ class _KiotaPayHomeState extends State<KiotaPayHome> {
                                   cancelText: 'Close',
                                 );
                               },
-                              size: height / 10,
+                              size: height / 12,
                               iconSize: height / 30,
                               backgroundColor: ChanzoColors.secondary20,
                               iconColor: ChanzoColors.secondary,
@@ -564,9 +566,14 @@ class _KiotaPayHomeState extends State<KiotaPayHome> {
 
                             RoundedIconButtonWithLabel(
                               icon: LineIcons.newspaper,
-                              label: "Exam",
-                              onPressed: () => Get.to(() => Placeholder()),
-                              size: height / 10,
+                              label: "Exams",
+                              onPressed: () {
+                                if (Navigator.canPop(context)) {
+                                  Navigator.pop(context);
+                                }
+                                Get.offAll(() => KiotaPayDashboard('2'));
+                              },
+                              size: height / 12,
                               iconSize: height / 30,
                               backgroundColor: ChanzoColors.secondary20,
                               iconColor: ChanzoColors.secondary,
@@ -591,7 +598,7 @@ class _KiotaPayHomeState extends State<KiotaPayHome> {
                                             .selectedStudent['stream_id'],
                                       ));
                               },
-                              size: height / 10,
+                              size: height / 12,
                               iconSize: height / 30,
                               backgroundColor: ChanzoColors.secondary20,
                               iconColor: ChanzoColors.secondary,
@@ -613,7 +620,7 @@ class _KiotaPayHomeState extends State<KiotaPayHome> {
                                       studentId:
                                           authController.selectedStudent['id']));
                               },
-                              size: height / 10,
+                              size: height / 12,
                               iconSize: height / 30,
                               backgroundColor: ChanzoColors.secondary20,
                               iconColor: ChanzoColors.secondary,
@@ -631,7 +638,7 @@ class _KiotaPayHomeState extends State<KiotaPayHome> {
                                 if (authController.hasPermission('resource_center-view'))
                                   Get.to(() => ResourceCenterScreen());
                               },
-                              size: height / 10,
+                              size: height / 12,
                               iconSize: height / 30,
                               backgroundColor: ChanzoColors.secondary20,
                               iconColor: ChanzoColors.secondary,
@@ -647,7 +654,7 @@ class _KiotaPayHomeState extends State<KiotaPayHome> {
                               icon: LineIcons.money_check,
                               label: "Homework",
                               onPressed: () => Get.to(() => HomeworkScreen()),
-                              size: height / 10,
+                              size: height / 12,
                               iconSize: height / 30,
                               backgroundColor: ChanzoColors.secondary20,
                               iconColor: ChanzoColors.secondary,
@@ -662,7 +669,7 @@ class _KiotaPayHomeState extends State<KiotaPayHome> {
                               icon: LineIcons.newspaper,
                               label: "Notice Board",
                               onPressed: () => Get.to(() => NoticesScreen()),
-                              size: height / 10,
+                              size: height / 12,
                               iconSize: height / 30,
                               backgroundColor: ChanzoColors.secondary20,
                               iconColor: ChanzoColors.secondary,
@@ -677,7 +684,7 @@ class _KiotaPayHomeState extends State<KiotaPayHome> {
                               icon: LineIcons.calendar,
                               label: "Calendar",
                               onPressed: () => Get.to(() => CalendarScreen()),
-                              size: height / 10,
+                              size: height / 12,
                               iconSize: height / 30,
                               backgroundColor: ChanzoColors.secondary20,
                               iconColor: ChanzoColors.secondary,
@@ -691,8 +698,10 @@ class _KiotaPayHomeState extends State<KiotaPayHome> {
                             RoundedIconButtonWithLabel(
                               icon: LineIcons.laptop,
                               label: "Transport",
-                              onPressed: () => Get.to(() => Placeholder()),
-                              size: height / 10,
+                              onPressed: () {
+                                awesomeDialog(context, "Coming Soon", "This module is under construction", true, DialogType.success, ChanzoColors.primary)..show();
+                              },
+                              size: height / 12,
                               iconSize: height / 30,
                               backgroundColor: ChanzoColors.secondary20,
                               iconColor: ChanzoColors.secondary,

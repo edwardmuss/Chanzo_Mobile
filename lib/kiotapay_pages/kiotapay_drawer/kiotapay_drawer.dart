@@ -9,10 +9,17 @@ import 'package:kiotapay/globalclass/chanzo_color.dart';
 import 'package:kiotapay/globalclass/kiotapay_global_classes.dart';
 import 'package:kiotapay/globalclass/kiotapay_fontstyle.dart';
 import 'package:kiotapay/kiotapay_models/user_model.dart';
+import 'package:kiotapay/kiotapay_pages/Examination/parent_results_home_screen.dart';
+import 'package:kiotapay/kiotapay_pages/calendar/calendar_screen.dart';
+import 'package:kiotapay/kiotapay_pages/homework/homework_screen.dart';
 import 'package:kiotapay/kiotapay_pages/kiota_categories/list.dart';
 import 'package:kiotapay/globalclass/text_icon_button.dart';
+import 'package:kiotapay/kiotapay_pages/kiotapay_dahsboard/kiotapay_dahsboard.dart';
 import 'package:kiotapay/kiotapay_pages/kiotapay_settings/kiotapay_settings.dart';
+import 'package:kiotapay/kiotapay_pages/notice_board/notice_board_screen.dart';
+import 'package:kiotapay/kiotapay_pages/timetable/timetable_screen.dart';
 import 'package:kiotapay/kiotapay_theme/kiotapay_themecontroller.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import 'package:nb_utils/nb_utils.dart' hide DialogType;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -20,10 +27,13 @@ import '../../globalclass/global_methods.dart';
 import '../../globalclass/kiotapay_constants.dart';
 import '../../globalclass/kiotapay_icons.dart';
 import '../Examination/performance_controller.dart';
+import '../attendance/student_attendance.dart';
+import '../finance/parent_dashboard.dart';
 import '../kiota_teams/list.dart';
 import 'package:http/http.dart' as http;
 
 import '../kiotapay_authentication/AuthController.dart';
+import '../resource_center/resource_center_screen.dart';
 
 class KiotaPayDrawer extends StatefulWidget {
   const KiotaPayDrawer({super.key});
@@ -83,10 +93,11 @@ class _KiotaPayDrawerState extends State<KiotaPayDrawer> {
 
                 // Spacer for the student list (when expanded)
                 Obx(() => SizedBox(
-                  height: authController.isStudentListExpanded.value
-                      ? _calculateStudentListHeight(authController.allStudents.length)
-                      : 0,
-                )),
+                      height: authController.isStudentListExpanded.value
+                          ? _calculateStudentListHeight(
+                              authController.allStudents.length)
+                          : 0,
+                    )),
 
                 // Drawer menu items
                 _buildMenuItems(context, authController),
@@ -97,14 +108,15 @@ class _KiotaPayDrawerState extends State<KiotaPayDrawer> {
           // Student list overlay (positioned absolutely)
           if (authController.userRole == 'parent')
             Obx(() => AnimatedPositioned(
-              duration: const Duration(milliseconds: 300),
-              top: authController.isStudentListExpanded.value
-                  ? _getHeaderHeight()
-                  : -_calculateStudentListHeight(authController.allStudents.length),
-              left: 0,
-              right: 0,
-              child: _buildStudentList(authController),
-            )),
+                  duration: const Duration(milliseconds: 300),
+                  top: authController.isStudentListExpanded.value
+                      ? _getHeaderHeight()
+                      : -_calculateStudentListHeight(
+                          authController.allStudents.length),
+                  left: 0,
+                  right: 0,
+                  child: _buildStudentList(authController),
+                )),
         ],
       ),
     );
@@ -161,7 +173,8 @@ class _KiotaPayDrawerState extends State<KiotaPayDrawer> {
                       child: CircleAvatar(
                         radius: 12,
                         backgroundImage: NetworkImage(
-                          authController.selectedStudent['user']?['avatar'] != null
+                          authController.selectedStudent['user']?['avatar'] !=
+                                  null
                               ? '${KiotaPayConstants.webUrl}storage/${authController.selectedStudent['user']['avatar']}'
                               : KiotaPayPngimage.profile,
                         ),
@@ -189,21 +202,23 @@ class _KiotaPayDrawerState extends State<KiotaPayDrawer> {
               if (authController.userRole == 'parent') ...[
                 const SizedBox(height: 10),
                 Obx(() => Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      authController.selectedStudent['user']?['first_name'] ?? '',
-                      style: pmedium_md.copyWith(color: Colors.white),
-                    ),
-                    const SizedBox(width: 8),
-                    Icon(
-                      authController.isStudentListExpanded.value
-                          ? Icons.expand_less
-                          : Icons.expand_more,
-                      color: Colors.white,
-                    ),
-                  ],
-                )),
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          authController.selectedStudent['user']
+                                  ?['first_name'] ??
+                              '',
+                          style: pmedium_md.copyWith(color: Colors.white),
+                        ),
+                        const SizedBox(width: 8),
+                        Icon(
+                          authController.isStudentListExpanded.value
+                              ? Icons.expand_less
+                              : Icons.expand_more,
+                          color: Colors.white,
+                        ),
+                      ],
+                    )),
               ],
             ],
           ),
@@ -220,7 +235,8 @@ class _KiotaPayDrawerState extends State<KiotaPayDrawer> {
         child: Column(
           children: authController.allStudents.map((student) {
             final user = student['user'];
-            final isSelected = authController.selectedStudent['id'] == student['id'];
+            final isSelected =
+                authController.selectedStudent['id'] == student['id'];
 
             return ListTile(
               onTap: () async {
@@ -254,13 +270,15 @@ class _KiotaPayDrawerState extends State<KiotaPayDrawer> {
                 "${user?['first_name']} ${user?['last_name']}",
                 style: TextStyle(
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  color: isSelected ? ChanzoColors.primary : Colors.grey.shade800,
+                  color:
+                      isSelected ? ChanzoColors.primary : Colors.grey.shade800,
                 ),
               ),
               subtitle: Text(
                 student['class']?['name'] ?? 'No class',
                 style: pregular_sm.copyWith(
-                  color: isSelected ? ChanzoColors.primary : Colors.grey.shade600,
+                  color:
+                      isSelected ? ChanzoColors.primary : Colors.grey.shade600,
                 ),
               ),
               trailing: isSelected
@@ -279,34 +297,94 @@ class _KiotaPayDrawerState extends State<KiotaPayDrawer> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (authController.hasPermission('student-view'))
+          // if (authController.hasPermission('student-view'))
+          TextIconButton(
+            onPressed: () {
+              Navigator.of(context).pop(); // close drawer
+              Get.offAll(() => KiotaPayDashboard('1'));
+            },
+            icon: LucideIcons.dollarSign,
+            label: 'Finance',
+          ),
+          // if (authController.hasPermission('class_timetable-view'))
+          // if (authController.hasRole('Branch Admin') || authController.hasRole('DOS') || authController.hasRole('Teacher') || authController.hasRole('Parent'))
+          if (authController.hasRole('Parent'))
             TextIconButton(
-              onPressed: () => Get.to(() => KiotaPayCategories()),
-              icon: BootstrapIcons.bar_chart,
-              label: 'Finance',
-            ),
-
-          if (authController.hasPermission('class_timetable-view'))
-            TextIconButton(
-              onPressed: () => Get.to(() => KiotaPayCategories()),
+              onPressed: () {
+                if (Navigator.canPop(context)) {
+                  Navigator.pop(context);
+                }
+                Get.offAll(() => KiotaPayDashboard('2'));
+              },
+              // onPressed: () => Get.to(() => ParentResultsHomeScreen()),
               icon: Icons.book,
               label: 'Academics',
             ),
-
+          // if (authController.hasPermission('student-view'))
+          TextIconButton(
+            onPressed: () {
+              Navigator.of(context).pop(); // close drawer
+              // optional small delay
+              Future.delayed(Duration(milliseconds: 100), () {
+                Get.off(() => KiotaPayDashboard('1'));
+              });
+            },
+            icon: LucideIcons.dollarSign,
+            label: 'Finance',
+          ),
           if (authController.hasPermission('notice_board-view'))
             TextIconButton(
-              onPressed: () => Get.to(() => KiotaPayCategories()),
-              icon: Icons.phone,
-              label: 'Communication',
+              onPressed: () => Get.to(() => NoticesScreen()),
+              icon: Icons.notifications,
+              label: 'Notice Board',
             ),
-
+          if (authController.hasPermission('calendar-view'))
+            TextIconButton(
+              onPressed: () => Get.to(() => CalendarScreen()),
+              icon: Icons.calendar_month,
+              label: 'Calendar',
+            ),
+          if (authController.hasPermission('class_timetable-view'))
+            TextIconButton(
+              onPressed: () {
+                if (authController.hasRole('Parent')) {
+                  Get.to(() => TimetableScreen(
+                      classId: authController.selectedStudentClassId,
+                      streamId: authController.selectedStudentStreamId));
+                }
+              },
+              icon: Icons.history,
+              label: 'Timetable',
+            ),
+          if (authController.hasPermission('class_timetable-view'))
+            TextIconButton(
+              onPressed: () => Get.to(() => StudentAttendanceScreen(
+                  studentId: authController.selectedStudentId)),
+              icon: Icons.watch,
+              label: 'Attendance',
+            ),
+          if (authController.hasPermission('resource_center-view'))
+            TextIconButton(
+              onPressed: () {
+                Get.to(() => ResourceCenterScreen());
+              },
+              icon: Icons.file_present,
+              label: 'Resources',
+            ),
+          if (authController.hasPermission('homework-view'))
+            TextIconButton(
+              onPressed: () {
+                Get.to(() => HomeworkScreen());
+              },
+              icon: Icons.assessment,
+              label: 'Homework',
+            ),
           if (authController.hasPermission('transport-view'))
             TextIconButton(
               onPressed: () => Get.to(() => KiotaPayCategories()),
               icon: Icons.bus_alert,
               label: 'Transport',
             ),
-
           ListTile(
             leading: ClipOval(
               child: Material(
@@ -315,35 +393,34 @@ class _KiotaPayDrawerState extends State<KiotaPayDrawer> {
                   splashColor: ChanzoColors.primary,
                   onTap: () {},
                   child: const SizedBox(
-                    width: 50,
-                    height: 50,
-                    child: Icon(Icons.dark_mode, size: 20, color: ChanzoColors.primary),
+                    width: 40,
+                    height: 40,
+                    child: Icon(Icons.dark_mode,
+                        size: 20, color: ChanzoColors.primary),
                   ),
                 ),
               ),
             ),
-            title: Text("Dark_Mode".tr, style: pregular_md.copyWith(color: ChanzoColors.textgrey)),
+            title: Text("Dark_Mode".tr,
+                style: pregular_md.copyWith(color: ChanzoColors.textgrey)),
             trailing: Obx(() => Switch(
-              activeColor: ChanzoColors.primary,
-              onChanged: (state) => Get.find<KiotaPayThemecontroler>().toggleTheme(),
-              value: Get.find<KiotaPayThemecontroler>().isdark.value,
-            )),
+                  activeColor: ChanzoColors.primary,
+                  onChanged: (state) =>
+                      Get.find<KiotaPayThemecontroler>().toggleTheme(),
+                  value: Get.find<KiotaPayThemecontroler>().isdark.value,
+                )),
           ),
-
           const Divider(height: 50, color: ChanzoColors.primary, thickness: 1),
-
           TextIconButton(
             onPressed: () => logout(context),
             icon: Icons.logout,
             label: 'Log out',
           ),
-
           TextIconButton(
             onPressed: () => Scaffold.of(context).closeDrawer(),
             icon: Icons.close,
             label: 'Close',
           ),
-
           Padding(
             padding: const EdgeInsets.only(left: 30.0, top: 30.0),
             child: Text(
