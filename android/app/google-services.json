@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "329266640062",
+    "project_id": "chanzo-d14ef",
+    "storage_bucket": "chanzo-d14ef.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:329266640062:android:f7f70aaea656d137fedaef",
+        "android_client_info": {
+          "package_name": "com.chanzo.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCUD-lJvOodE7B7cftrQJMGy-9i9nmPntQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
