@@ -104,7 +104,7 @@ class KiotaPayMythemes {
     bottomNavigationBarTheme: BottomNavigationBarThemeData(
       backgroundColor: ChanzoColors.lightblack,
     ),
-    bottomAppBarTheme: BottomAppBarTheme(color: ChanzoColors.lightblack),
+    bottomAppBarTheme: BottomAppBarThemeData(color: ChanzoColors.lightblack),
     appBarTheme: AppBarTheme(
       systemOverlayStyle: SystemUiOverlayStyle(
         statusBarColor: ChanzoColors.transparent,
