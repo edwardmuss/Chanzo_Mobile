@@ -22,7 +22,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize Firebase
-  await Firebase.initializeApp();
+  // await Firebase.initializeApp();
 
   // Initialize notifications
   await NotificationService.initialize();
