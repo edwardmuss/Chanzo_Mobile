@@ -25,7 +25,7 @@ Future<void> main() async {
   // await Firebase.initializeApp();
 
   // Initialize notifications
-  await NotificationService.initialize();
+  // await NotificationService.initialize();
 
   // SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
 // Initialize ObjectBox
