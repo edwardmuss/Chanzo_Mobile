@@ -1,15 +1,20 @@
+import 'dart:developer'; // for better formatted logs
+
 class StudentPerformance {
   final StudentInfo student;
   final ExamInfo exam;
-  final List<SubjectResult> subjects;
+  final List<SubjectPerformance> subjects;
+
   final num totalScore;
   final num previousTotal;
   final num meanScore;
   final String grade;
   final num previousMean;
-  final int changeTotal;
+  final num changeTotal;
   final num percentChangeTotal;
   final num changeMean;
+  final String? previousGrade;
+  final String? changeTrend;
 
   StudentPerformance({
     required this.student,
@@ -23,24 +28,30 @@ class StudentPerformance {
     required this.changeTotal,
     required this.percentChangeTotal,
     required this.changeMean,
+    this.previousGrade,
+    this.changeTrend,
   });
 
   factory StudentPerformance.fromJson(Map<String, dynamic> json) {
-    final data = json['data'];
+    final data = json['data'] as Map<String, dynamic>;
+
     return StudentPerformance(
       student: StudentInfo.fromJson(data['student']),
       exam: ExamInfo.fromJson(data['exam']),
-      subjects: (data['subjects'] as List)
-          .map((s) => SubjectResult.fromJson(s))
+      subjects: (data['subjects'] as List<dynamic>)
+          .map((e) => SubjectPerformance.fromJson(e))
           .toList(),
-      totalScore: (data['total_score'] as num).toInt(),
-      previousTotal: (data['previous_total'] as num).toInt(),
-      meanScore: (data['mean_score'] as num).toDouble(),
-      grade: data['grade'],
-      previousMean: (data['previous_mean'] as num).toDouble(),
-      changeTotal: (data['change_total'] as num).toInt(),
-      percentChangeTotal: (data['percent_change_total'] as num).toDouble(),
-      changeMean: (data['change_mean'] as num).toDouble(),
+
+      totalScore: data['total_score'] ?? 0,
+      previousTotal: data['previous_total'] ?? 0,
+      meanScore: data['mean_score'] ?? 0,
+      grade: data['grade'] ?? 'N/A',
+      previousMean: data['previous_mean'] ?? 0,
+      changeTotal: data['change_total'] ?? 0,
+      percentChangeTotal: data['percent_change_total'] ?? 0,
+      changeMean: data['change_mean'] ?? 0,
+      previousGrade: data['previous_grade'],
+      changeTrend: data['change_trend'],
     );
   }
 }
@@ -63,10 +74,10 @@ class StudentInfo {
   factory StudentInfo.fromJson(Map<String, dynamic> json) {
     return StudentInfo(
       id: json['id'],
-      name: json['name'],
-      admissionNo: json['admission_no'],
-      className: json['class'],
-      stream: json['stream'],
+      name: json['name'] ?? 'Unknown',
+      admissionNo: json['admission_no'] ?? '',
+      className: json['class'] ?? '',
+      stream: json['stream'] ?? '',
     );
   }
 }
@@ -87,44 +98,50 @@ class ExamInfo {
   factory ExamInfo.fromJson(Map<String, dynamic> json) {
     return ExamInfo(
       id: json['id'],
-      name: json['name'],
-      term: json['term'],
-      academicSession: json['academic_session'],
+      name: json['name'] ?? '',
+      term: json['term']?.toString() ?? '',
+      academicSession: json['academic_session']?.toString() ?? '',
     );
   }
 }
 
-class SubjectResult {
-  final String subject;
-  final num totalWeightedScore;
-  final num totalWeight;
-  final num finalScore;
-  final num previousScore;
-  final num percentChange;
+class SubjectPerformance {
+  final int subjectId;
+  final String subjectName;
+  final num score;
   final String grade;
-  final num subjectChange;
 
-  SubjectResult({
-    required this.subject,
-    required this.totalWeightedScore,
-    required this.totalWeight,
-    required this.finalScore,
-    required this.previousScore,
-    required this.percentChange,
+  final num? previousScore;
+  final String? previousGrade;
+  final num? change;
+  final String? trend;
+
+  SubjectPerformance({
+    required this.subjectId,
+    required this.subjectName,
+    required this.score,
     required this.grade,
-    required this.subjectChange,
+    this.previousScore,
+    this.previousGrade,
+    this.change,
+    this.trend,
   });
 
-  factory SubjectResult.fromJson(Map<String, dynamic> json) {
-    return SubjectResult(
-      subject: json['subject'],
-      totalWeightedScore: json['total_weighted_score'],
-      totalWeight: json['total_weight'],
-      finalScore: json['final_score'],
+  factory SubjectPerformance.fromJson(Map<String, dynamic> json) {
+    return SubjectPerformance(
+      subjectId: json['subject_id'],
+      subjectName: json['subject_name'] ?? '',
+      score: json['score'] ?? 0,
+      grade: json['grade'] ?? 'N/A',
       previousScore: json['previous_score'],
-      percentChange: (json['percent_change'] as num).toDouble(),
-      grade: json['grade'],
-      subjectChange: json['subject_change'],
+      previousGrade: json['previous_grade'],
+      change: json['change'],
+      trend: json['trend'],
     );
   }
+
+  /// Helpers for UI
+  bool get hasTrend => trend != null;
+  bool get isPositive => change != null && change! >= 0;
 }
+

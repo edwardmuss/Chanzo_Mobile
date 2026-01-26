@@ -28,7 +28,7 @@ class _StudentAnalyticsScreenState extends State<StudentAnalyticsScreen> {
   void initState() {
     super.initState();
     Get.put(PerformanceController());
-    Get.find<PerformanceController>().loadStudentExamTrend();
+    Get.find<PerformanceController>().loadStudentExamTrend(academic_session_id: authController.currentAcademicSessionID);
 
     // Get.put(FilterController());
     // Get.find<FilterController>()

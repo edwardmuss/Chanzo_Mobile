@@ -95,7 +95,7 @@ class _KiotaPayDrawerState extends State<KiotaPayDrawer> {
                 Obx(() => SizedBox(
                       height: authController.isStudentListExpanded.value
                           ? _calculateStudentListHeight(
-                              authController.allStudents.length)
+                            authController.studentsInActiveBranch.length)
                           : 0,
                     )),
 
@@ -233,7 +233,7 @@ class _KiotaPayDrawerState extends State<KiotaPayDrawer> {
       child: Container(
         color: Colors.white,
         child: Column(
-          children: authController.allStudents.map((student) {
+          children: authController.studentsInActiveBranch.map((student) {
             final user = student['user'];
             final isSelected =
                 authController.selectedStudent['id'] == student['id'];
@@ -297,6 +297,27 @@ class _KiotaPayDrawerState extends State<KiotaPayDrawer> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          TextIconButton(
+            onPressed: () async {
+              await openContextSwitcher(
+                context,
+                onContextChanged: () async {
+                  authController.isStudentListExpanded.value = false;
+                  authController.ensureSelectedStudentInActiveBranch();
+                  await refreshUserProfile(context);
+                  await Get.find<PerformanceController>().refreshData();
+                },
+                onStudentChanged: () async {
+                  authController.isStudentListExpanded.value = false;
+                  await refreshUserProfile(context);
+                  await Get.find<PerformanceController>().refreshData();
+                },
+              );
+              if (Navigator.canPop(context)) Navigator.pop(context);
+            },
+            icon: Icons.swap_horiz,
+            label: 'Switch Account',
+          ),
           // if (authController.hasPermission('student-view'))
           TextIconButton(
             onPressed: () {

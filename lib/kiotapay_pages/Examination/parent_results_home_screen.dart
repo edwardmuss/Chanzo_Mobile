@@ -26,12 +26,13 @@ class ParentResultsHomeScreen extends StatefulWidget {
 class _ParentResultsHomeScreenState extends State<ParentResultsHomeScreen> {
   String? _selectedFilter;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final hasSelection = false.obs;
 
   @override
   void initState() {
     super.initState();
     Get.put(PerformanceController());
-    Get.find<PerformanceController>().loadPerformance();
+    Get.find<PerformanceController>().loadPerformance(academic_session_id: authController.currentAcademicSessionID);
 
     Get.put(FilterController());
     Get.find<FilterController>()

@@ -86,7 +86,7 @@ class CalendarScreen extends StatelessWidget {
           ),
         ),
         SizedBox(
-          height: 50,
+          height: 0,
           child: Obx(() {
             final categories = controller.events
                 .map((e) => e.category.toLowerCase())
@@ -104,25 +104,25 @@ class CalendarScreen extends StatelessWidget {
                 final isSelected = controller.selectedCategories.contains(category);
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
-                  child: FilterChip(
-                    label: Text(category.capitalizeFirst!),
-                    selected: isSelected,
-                    onSelected: (_) => controller.toggleCategory(category),
-                    backgroundColor: Colors.grey.shade200,
-                    selectedColor: Theme.of(context).primaryColor.withOpacity(0.2),
-                    labelStyle: TextStyle(
-                      color: isSelected
-                          ? Theme.of(context).primaryColor
-                          : Colors.grey.shade800,
-                    ),
-                    shape: StadiumBorder(
-                      side: BorderSide(
-                        color: isSelected
-                            ? Theme.of(context).primaryColor
-                            : Colors.grey.shade300,
-                      ),
-                    ),
-                  ),
+                  // child: FilterChip(
+                  //   label: Text(category.capitalizeFirst!),
+                  //   selected: isSelected,
+                  //   onSelected: (_) => controller.toggleCategory(category),
+                  //   backgroundColor: Colors.grey.shade200,
+                  //   selectedColor: Theme.of(context).primaryColor.withOpacity(0.2),
+                  //   labelStyle: TextStyle(
+                  //     color: isSelected
+                  //         ? Theme.of(context).primaryColor
+                  //         : Colors.grey.shade800,
+                  //   ),
+                  //   shape: StadiumBorder(
+                  //     side: BorderSide(
+                  //       color: isSelected
+                  //           ? Theme.of(context).primaryColor
+                  //           : Colors.grey.shade300,
+                  //     ),
+                  //   ),
+                  // ),
                 );
               },
             );

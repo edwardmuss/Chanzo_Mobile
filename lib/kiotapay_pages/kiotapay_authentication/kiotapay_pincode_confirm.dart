@@ -62,7 +62,7 @@ class _KiotaPayPinConfirmState extends State<KiotaPayPinConfirm> {
       refreshToken();
     }
     var token = await getAccessToken();
-    var secure_hash = hashedKey(KiotaPayConstants.apiKey, pinController.text, KiotaPayConstants.apiSecret);
+    var secure_hash = hashedKey("KiotaPayConstants.apiKey", pinController.text, "KiotaPayConstants.apiSecret");
     var headers = {
       'Authorization': 'Bearer $token',
       'Content-Type': 'application/json',

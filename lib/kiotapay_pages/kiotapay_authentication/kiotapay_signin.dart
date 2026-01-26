@@ -29,8 +29,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../globalclass/AppEnv.dart';
 import '../../globalclass/choose_student_page.dart';
 import 'AuthController.dart';
+import 'BranchContext.dart';
+import 'SelectBranchPage.dart';
 import 'change_password_new_user.dart';
 
 class KiotaPaySignIn extends StatefulWidget {
@@ -57,6 +60,8 @@ class _KiotaPaySignInState extends State<KiotaPaySignIn> {
   String? _token;
   Map<String, dynamic>? _userData;
   List<dynamic> _accounts = [];
+  final _secure = const FlutterSecureStorage();
+  String? _selectedCountry; // 'KE', 'TZ', etc.
 
   void _togglePasswordStatus() {
     setState(() {
@@ -74,12 +79,34 @@ class _KiotaPaySignInState extends State<KiotaPaySignIn> {
     isInternetConnected();
     _loadRememberMe();
     _loadRememberedCredentials();
+    _loadCountry();
   }
 
   void dispose() {
     super.dispose();
     usernameController.dispose();
     passwordController.dispose();
+  }
+
+  Future<void> _loadCountry() async {
+    final saved = await _secure.read(key: AppEnv.storageKeyCountry);
+    setState(() {
+      _selectedCountry = saved ?? AppEnv.defaultCountry;
+    });
+    setBaseUrlForCountry(_selectedCountry!);
+  }
+
+  Future<void> _saveCountry(String code) async {
+    await _secure.write(key: AppEnv.storageKeyCountry, value: code);
+    setBaseUrlForCountry(code);
+    setState(() => _selectedCountry = code);
+  }
+
+  void setBaseUrlForCountry(String countryCode) {
+    final url = AppEnv.baseUrls[countryCode];
+    if (url != null) {
+      KiotaPayConstants.baseUrl = url;
+    }
   }
 
   getBiometricSwitchState() async {
@@ -217,7 +244,8 @@ class _KiotaPaySignInState extends State<KiotaPaySignIn> {
     await secureStorage.write(key: 'token', value: token);
     await secureStorage.write(key: 'user', value: jsonEncode(user));
     await secureStorage.write(key: 'roles', value: jsonEncode(roles));
-    await secureStorage.write(key: 'permissions', value: jsonEncode(permissions));
+    await secureStorage.write(
+        key: 'permissions', value: jsonEncode(permissions));
     await secureStorage.write(
         key: 'login_timestamp',
         value: DateTime.now().millisecondsSinceEpoch.toString());
@@ -239,131 +267,161 @@ class _KiotaPaySignInState extends State<KiotaPaySignIn> {
     isInternetConnected();
     showLoading("Authenticating");
 
-    if (usernameController.text == '' || passwordController.text == '') {
+    if (usernameController.text.trim().isEmpty || passwordController.text.isEmpty) {
       hideLoading();
       showSnackBar(context, "All fields are required", Colors.red, 2.00, 2, 3);
       return;
     }
 
-    var headers = {'Content-Type': 'application/json'};
-    var payload = {
+    final headers = {'Content-Type': 'application/json'};
+    final payload = {
       'username': usernameController.text.trim(),
-      'password': passwordController.text
+      'password': passwordController.text,
     };
 
+    // ---------- helpers (safe parsing) ----------
+    Map<String, dynamic> asMap(dynamic v) {
+      if (v is Map<String, dynamic>) return v;
+      if (v is Map) return Map<String, dynamic>.from(v);
+      return <String, dynamic>{};
+    }
+
+    List<String> asStringList(dynamic v) {
+      if (v is List) return v.whereType<String>().toList();
+      return <String>[];
+    }
+
+    List<Map<String, dynamic>> asListOfMap(dynamic v) {
+      if (v is List) {
+        return v
+            .where((e) => e is Map) // filters out nulls & non-maps
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .toList();
+      }
+      return <Map<String, dynamic>>[];
+    }
+
     try {
-      var url = Uri.parse(KiotaPayConstants.login);
-      http.Response response = await http.post(
-        url,
-        body: jsonEncode(payload),
-        headers: headers,
-      );
+      final url = Uri.parse(KiotaPayConstants.login);
+      final response = await http.post(url, body: jsonEncode(payload), headers: headers);
       final json = jsonDecode(response.body);
 
-      if (response.statusCode == 200) {
-        showLoading("Successfully logged in...");
-
-        final data = json['data'];
-
-        final token = data['token'];
-        final school = data['school'];
-        final currentAcademicSession = data['current_academic_session'];
-        final currentAcademicTerm = data['current_academic_term'];
-        final user = data['user'];
-        final roles = List<String>.from(data['roles']);
-        final permissions = List<String>.from(data['permissions']);
-
-        SharedPreferences prefs = await SharedPreferences.getInstance();
-        await prefs.setString('uuid', user['id'].toString());
-
-        // Cache data in secure storage
-        await saveAuthData(
-          token: token,
-          user: user,
-          roles: roles,
-          permissions: permissions,
-        );
-
-        // Populate AuthController
-        authController.setUser(user);
-        authController.setToken(token);
-        authController.setRoles(roles);
-        authController.setPermissions(permissions);
-        authController.setSchool(school);
-        authController.setCurrentAcademicSession(currentAcademicSession);
-        authController.setCurrentAcademicTerm(currentAcademicTerm);
-
-        // Optional: Setup biometric
-        await KiotaPayBiometricAuth.checkBiometricSetup(user['id'].toString());
-        print(await storage.read(key: 'token'));
-        print("Token set in controller: ${authController.token.value}");
-
+      if (response.statusCode != 200) {
         hideLoading();
-        // Handle parent students
-        if (user['role'] == 'parent') {
-          // Extract students array
-          List<Map<String, dynamic>> students = List<Map<String, dynamic>>.from(data['students']);
-
-          // Save all students in controller
-          authController.setStudents(students);
-
-          // If "Remember me" is checked, save credentials securely
-          if (_rememberMe) {
-            await secureStorage.write(
-              key: 'username',
-              value: usernameController.text,
-            );
-            await secureStorage.write(
-              key: 'password',
-              value: passwordController.text,
-            );
-          }
-
-          // Check if biometric is enabled
-          if (isBioMetricEnabled) {
-            await KiotaPayBiometricAuth.saveBiometricSetup(user['id'].toString());
-            // Require biometric auth immediately after enabling
-            final authenticated = await KiotaPayBiometricAuth.authenticateUser();
-            if (!authenticated) {
-              SystemNavigator.pop();
-              return;
-            }
-          } else {
-            await KiotaPayBiometricAuth.clearBiometricSetup(user['id'].toString());
-          }
-
-          if (students.length == 1) {
-            // Auto-select if only one child
-            authController.setSelectedStudent(students.first);
-            Get.offAll(() => KiotaPayDashboard('0'));
-          } else {
-            // Show modal/page to pick student
-            Get.off(() => ChooseStudentPage());
-          }
-        } else {
-          // Non-parent users
-          Get.offAll(() => KiotaPayDashboard('0'));
-        }
-      } else {
-        var error = jsonDecode(response.body)['message'] ?? "Unknown Error";
-        // If validation errors exist
-        String errorMessage = json['message'];
-
-        if (json['data'] is Map && json['data'].isNotEmpty) {
-          errorMessage = json['data'].values
-              .map((e) => e.join(", "))
-              .join("\n"); // Join multiple errors
-        }
-        hideLoading();
+        final msg = (json is Map && json['message'] != null) ? json['message'].toString() : "Unknown Error";
         awesomeDialog(
           context,
           "Error",
-          errorMessage,
+          msg,
           true,
           DialogType.error,
           ChanzoColors.secondary,
         ).show();
+        return;
       }
+
+      showLoading("Successfully logged in...");
+
+      // Root shape safety
+      final root = asMap(json);
+      final data = asMap(root['data']);
+
+      // Core fields (safe)
+      final token = (data['token'] ?? '').toString();
+      final user = asMap(data['user']);
+      final school = asMap(data['school']);
+      final currentAcademicSession = asMap(data['current_academic_session']);
+      final currentAcademicTermRaw = data['current_academic_term']; // may be null
+      final currentAcademicTerm = currentAcademicTermRaw == null ? <String, dynamic>{} : asMap(currentAcademicTermRaw);
+
+      final roles = asStringList(data['roles']);
+      final permissions = asStringList(data['permissions']);
+
+      // Persist uuid
+      final prefs = await SharedPreferences.getInstance();
+      if (user['id'] != null) {
+        await prefs.setString('uuid', user['id'].toString());
+      }
+
+      // Cache auth
+      await saveAuthData(
+        token: token,
+        user: user,
+        roles: roles,
+        permissions: permissions,
+      );
+
+      // Populate controller
+      authController.setUser(user);
+      authController.setToken(token);
+      authController.setRoles(roles);
+      authController.setPermissions(permissions);
+      authController.setSchool(school);
+      authController.setCurrentAcademicSession(currentAcademicSession);
+      authController.setCurrentAcademicTerm(currentAcademicTerm);
+
+      // Apply context payload safely
+      await authController.applyLoginPayload(data);
+
+      // If backend says "select branch/role", go there and STOP
+      final action = (data['context_action'] ?? 'skip').toString();
+      final requiresContext = data['requires_context_selection'] == true;
+
+      if (requiresContext || action == 'select_branch' || action == 'select_role') {
+        hideLoading();
+        Get.offAll(() => SelectBranchPage());
+        return;
+      }
+
+      // Ensure activeContext is stored when skip + current_context exists
+      final currentCtxRaw = data['current_context'];
+      if (action == 'skip' && currentCtxRaw != null) {
+        authController.activeContext.value = ActiveContext.fromJson(asMap(currentCtxRaw));
+      }
+
+      // Biometric (optional)
+      await KiotaPayBiometricAuth.checkBiometricSetup(user['id'].toString());
+
+      if (_rememberMe) {
+        await secureStorage.write(key: 'username', value: usernameController.text.trim());
+        await secureStorage.write(key: 'password', value: passwordController.text);
+      }
+
+      if (isBioMetricEnabled) {
+        await KiotaPayBiometricAuth.saveBiometricSetup(user['id'].toString());
+        final authenticated = await KiotaPayBiometricAuth.authenticateUser();
+        if (!authenticated) {
+          SystemNavigator.pop();
+          return;
+        }
+      } else {
+        await KiotaPayBiometricAuth.clearBiometricSetup(user['id'].toString());
+      }
+
+      hideLoading();
+
+      // ---------- Parent flow ----------
+      if ((user['role'] ?? '').toString() == 'parent') {
+        // SAFE students parsing (this fixes your crash)
+        final allStudents = asListOfMap(data['students']);
+        authController.setStudents(allStudents);
+
+        // Must run AFTER: activeContext + students are set
+        authController.ensureSelectedStudentInActiveBranch();
+
+        final filtered = studentsForActiveBranch(allStudents);
+
+        if (filtered.length == 1) {
+          authController.setSelectedStudent(filtered.first);
+          Get.offAll(() => KiotaPayDashboard('0'));
+        } else {
+          Get.off(() => ChooseStudentPage());
+        }
+        return;
+      }
+
+      // ---------- Non-parent ----------
+      Get.offAll(() => KiotaPayDashboard('0'));
     } catch (error) {
       hideLoading();
       awesomeDialog(
@@ -374,6 +432,75 @@ class _KiotaPaySignInState extends State<KiotaPaySignIn> {
         DialogType.error,
         ChanzoColors.secondary,
       ).show();
+    }
+  }
+
+  List<Map<String, dynamic>> studentsForActiveBranch(
+      List<Map<String, dynamic>> students) {
+    final branchId = authController.activeContext.value?.branchId;
+    if (branchId == null) return students;
+    return students.where((s) => s['branch_id'] == branchId).toList();
+  }
+
+  Future<void> routeAfterLogin(AuthController auth, Map<String, dynamic> data) async {
+    final action = (data['context_action'] ?? 'skip').toString();
+    final requiresContext = data['requires_context_selection'] == true;
+
+    if (auth.isGlobalRole.value) {
+      // Global role: no context UI, just continue caller flow
+      return;
+    }
+
+    // Needs selection: go UI and stop caller flow
+    if (requiresContext || action == 'select_branch' || action == 'select_role') {
+      Get.offAll(() => SelectBranchPage());
+      return;
+    }
+
+    // Has current context, just store it and continue caller flow (NO navigation)
+    final ctx = data['current_context'];
+    if (ctx is Map) {
+      auth.activeContext.value =
+          ActiveContext.fromJson(Map<String, dynamic>.from(ctx));
+      return;
+    } else {
+      // Important: if backend sent null, clear it so you don't keep stale context
+      auth.activeContext.value = null;
+    }
+
+    // Auto-select if needed (rare if backend already does it)
+    if (auth.availableContexts.length == 1 && auth.availableContexts.first.roles.length == 1) {
+      final b = auth.availableContexts.first;
+      final role = b.roles.first;
+
+      final updated = await auth.switchContextOnServer(branchId: b.branchId, role: role);
+
+      // updated is the whole response body: { success, message, data: {...} }
+      final updatedBody = (updated is Map) ? updated : <String, dynamic>{};
+      final updatedDataRaw = updatedBody['data'];
+
+      if (updatedDataRaw is Map) {
+        final updatedData = Map<String, dynamic>.from(updatedDataRaw);
+        final updatedCtx = updatedData['current_context'];
+
+        if (updatedCtx is Map) {
+          auth.activeContext.value =
+              ActiveContext.fromJson(Map<String, dynamic>.from(updatedCtx));
+        } else {
+          auth.activeContext.value = ActiveContext(
+            branchId: b.branchId,
+            role: role,
+            branchName: b.branchName,
+          );
+        }
+      } else {
+        // If API didn't return data for some reason, still set a fallback
+        auth.activeContext.value = ActiveContext(
+          branchId: b.branchId,
+          role: role,
+          branchName: b.branchName,
+        );
+      }
     }
   }
 
@@ -393,400 +520,365 @@ class _KiotaPaySignInState extends State<KiotaPaySignIn> {
     }
   }
 
+  Widget _countrySelector(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Country',
+          style: pregular.copyWith(fontSize: 14, color: ChanzoColors.textgrey),
+        ),
+        const SizedBox(height: 6),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(50),
+            border: Border.all(color: Colors.grey.shade300),
+            color: Colors.white,
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              isExpanded: true,
+              value: _selectedCountry,
+              hint: const Text('Select country'),
+              items: const [
+                DropdownMenuItem(value: 'KE', child: Text('Kenya')),
+                DropdownMenuItem(value: 'TZ', child: Text('Tanzania')),
+              ],
+              onChanged: (v) {
+                if (v == null) return;
+                _saveCountry(v);
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     size = MediaQuery.of(context).size;
     height = size.height;
     width = size.width;
     return Scaffold(
-      resizeToAvoidBottomInset: false,
-      body: Container(
-        width: double.infinity,
-        decoration: BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage(KiotaPayPngimage.bg),
-            fit: BoxFit.cover,
-            colorFilter: ColorFilter.mode(
-                ChanzoColors.primary.withOpacity(0.5), BlendMode.multiply),
+      resizeToAvoidBottomInset: true,
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(), // Dismiss keyboard on tap outside
+        child: Container(
+          width: double.infinity,
+          height: double.infinity, // Make container take full screen
+          decoration: BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage(KiotaPayPngimage.bg),
+              fit: BoxFit.cover,
+              colorFilter: ColorFilter.mode(
+                  ChanzoColors.primary.withOpacity(0.5), BlendMode.multiply),
+            ),
           ),
-        ),
-        child: Column(
-          children: <Widget>[
-            SizedBox(height: 80),
-            SizedBox(
-              height: height / 20,
-            ),
-            Image.asset(
-              KiotaPayPngimage.logohorizontalwhite,
-              width: MediaQuery.of(context).size.width / 2.5,
-              // height: MediaQuery.of(context).size.height / 3,
-              fit: BoxFit.scaleDown,
-            ),
-            SizedBox(height: height / 20),
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).scaffoldBackgroundColor,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(30),
-                    topRight: Radius.circular(30),
-                  ),
+          child: SingleChildScrollView(
+            child: Column(
+              children: <Widget>[
+                SizedBox(height: height * 0.1), // 10% of screen height
+                Image.asset(
+                  KiotaPayPngimage.logohorizontalwhite,
+                  width: MediaQuery.of(context).size.width / 2.5,
+                  fit: BoxFit.scaleDown,
                 ),
-                child: Padding(
-                  padding: EdgeInsets.symmetric(
-                      horizontal: width / 36, vertical: height / 36),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            "Welcome!".tr,
-                            style: Theme.of(context).textTheme.headlineMedium,
-                            textAlign: TextAlign.center,
-                          ),
-                          SizedBox(height: 8), // spacing
-                          Text(
-                            "Enter your credentials to access the account".tr,
-                            style: Theme.of(context).textTheme.labelLarge,
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
-                      // Text(
-                      //   "Welcome!".tr,
-                      //   style: Theme.of(context).textTheme.headlineMedium,
-                      // ),
-                      // Text(
-                      //   "Enter your credentials to access the account".tr,
-                      //   style: pregular.copyWith(
-                      //     fontSize: 14,
-                      //     color: ChanzoColors.primary,
-                      //   ),
-                      // ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 20),
-                          Text(
-                            "${"Email_Address".tr} / ${"Phone_Number".tr}",
-                            style: pregular.copyWith(
-                                fontSize: 14, color: ChanzoColors.textgrey),
-                          ),
-                          SizedBox(
-                            height: height / 200,
-                          ),
-                          TextFormField(
+                SizedBox(height: height / 20),
+                Container(
+                  constraints: BoxConstraints(
+                    minHeight: height * 0.6, // Minimum 60% of screen height
+                  ),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).scaffoldBackgroundColor,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(30),
+                      topRight: Radius.circular(30),
+                    ),
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: width / 20, // Slightly larger padding
+                      vertical: height / 25,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Welcome section
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Text(
+                              "Welcome!".tr,
+                              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                fontSize: 24,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              "Enter your credentials to access the account".tr,
+                              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                                fontSize: 14,
+                                color: Colors.grey[600],
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+
+                        SizedBox(height: height / 40),
+
+                        // Country selector
+                        _countrySelector(context),
+
+                        SizedBox(height: height / 40),
+
+                        // Username field
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "${"Email_Address".tr} / ${"Phone_Number".tr}",
+                              style: pregular.copyWith(
+                                fontSize: 14,
+                                color: ChanzoColors.textgrey,
+                              ),
+                            ),
+                            SizedBox(height: 6),
+                            TextFormField(
                               controller: usernameController,
-                              scrollPadding: EdgeInsets.only(
-                                  bottom:
-                                      MediaQuery.of(context).viewInsets.bottom),
-                              style: pregular.copyWith(fontSize: 14),
+                              style: pregular.copyWith(fontSize: 16),
                               decoration: InputDecoration(
-                                contentPadding: const EdgeInsets.all(8.0),
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 14,
+                                ),
                                 border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(50),
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: Colors.grey.shade300),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: Colors.grey.shade300),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: ChanzoColors.primary, width: 2),
                                 ),
                                 hintText: 'Enter Username'.tr,
-                                hintStyle: pregular.copyWith(fontSize: 14),
+                                hintStyle: pregular.copyWith(
+                                  fontSize: 14,
+                                  color: Colors.grey.shade500,
+                                ),
                                 prefixIcon: Padding(
-                                    padding: const EdgeInsets.all(14),
-                                    child: Image.asset(
-                                      KiotaPayPngimage.userprofile,
-                                      height: height / 36,
-                                      color: ChanzoColors.textgrey,
-                                    )),
-                                focusedBorder: UnderlineInputBorder(
-                                    borderRadius: BorderRadius.circular(0),
-                                    borderSide: const BorderSide(
-                                        color: ChanzoColors.primary)),
-                              )),
-                          SizedBox(
-                            height: height / 36,
-                          ),
-                          Text(
-                            "Password".tr,
-                            style: pregular.copyWith(
-                                fontSize: 14, color: ChanzoColors.textgrey),
-                          ),
-                          SizedBox(
-                            height: height / 200,
-                          ),
-                          TextFormField(
-                            controller: passwordController,
-                            obscureText: _obscureText,
-                            scrollPadding: EdgeInsets.only(
-                                bottom:
-                                    MediaQuery.of(context).viewInsets.bottom),
-                            style: pregular.copyWith(fontSize: 14),
-                            decoration: InputDecoration(
-                              contentPadding: const EdgeInsets.all(8.0),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(50),
+                                  padding: const EdgeInsets.all(12),
+                                  child: Image.asset(
+                                    KiotaPayPngimage.userprofile,
+                                    height: 20,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                                filled: true,
+                                fillColor: Colors.grey.shade50,
                               ),
-                              hintText: 'Enter_Password'.tr,
-                              hintStyle: pregular.copyWith(fontSize: 14),
-                              prefixIcon: Padding(
-                                  padding: const EdgeInsets.all(14),
+                            ),
+                          ],
+                        ),
+
+                        SizedBox(height: height / 40),
+
+                        // Password field
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Password".tr,
+                              style: pregular.copyWith(
+                                fontSize: 14,
+                                color: ChanzoColors.textgrey,
+                              ),
+                            ),
+                            SizedBox(height: 6),
+                            TextFormField(
+                              controller: passwordController,
+                              obscureText: _obscureText,
+                              style: pregular.copyWith(fontSize: 16),
+                              decoration: InputDecoration(
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 14,
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: Colors.grey.shade300),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: Colors.grey.shade300),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: ChanzoColors.primary, width: 2),
+                                ),
+                                hintText: 'Enter_Password'.tr,
+                                hintStyle: pregular.copyWith(
+                                  fontSize: 14,
+                                  color: Colors.grey.shade500,
+                                ),
+                                prefixIcon: Padding(
+                                  padding: const EdgeInsets.all(12),
                                   child: Image.asset(
                                     KiotaPayPngimage.lock,
-                                    height: height / 36,
-                                    color: ChanzoColors.textgrey,
-                                  )),
-                              suffixIcon: IconButton(
-                                icon: Icon(
-                                  _obscureText
-                                      ? Icons.visibility_off_outlined
-                                      : Icons.visibility_outlined,
-                                  size: height / 36,
-                                  color: ChanzoColors.textgrey,
+                                    height: 20,
+                                    color: Colors.grey.shade600,
+                                  ),
                                 ),
-                                onPressed: _togglePasswordStatus,
-                              ),
-                              focusedBorder: UnderlineInputBorder(
-                                  borderRadius: BorderRadius.circular(0),
-                                  borderSide: const BorderSide(
-                                      color: ChanzoColors.primary)),
-                            ),
-                          ),
-                          SizedBox(
-                            height: 5,
-                          ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              // Remember Me switch and label
-                              Row(
-                                children: [
-                                  Transform.scale(
-                                    scale: 0.8,
-                                    child: Switch(
-                                      activeTrackColor: ChanzoColors.primary,
-                                      inactiveThumbColor:
-                                          ChanzoColors.secondary,
-                                      trackOutlineColor: MaterialStateProperty
-                                          .resolveWith<Color?>(
-                                        (Set<WidgetState> states) {
-                                          if (states
-                                              .contains(WidgetState.selected)) {
-                                            return Colors
-                                                .transparent; // Selected state
-                                          }
-                                          return ChanzoColors
-                                              .primary; // Default state
-                                        },
-                                      ),
-                                      value: _rememberMe,
-                                      onChanged: (value) {
-                                        setState(() {
-                                          _rememberMe = value;
-                                        });
-                                        _saveRememberMe(
-                                            value); // Save to SharedPreferences
-                                      },
-                                    ),
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    _obscureText
+                                        ? Icons.visibility_off_outlined
+                                        : Icons.visibility_outlined,
+                                    size: 20,
+                                    color: Colors.grey.shade600,
                                   ),
-                                  Text(
-                                    "Remember_Me".tr,
-                                    style: pregular.copyWith(
-                                      fontSize: 14,
-                                      // color: ChanzoColors.primary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              // Forgot Password link
-                              InkWell(
-                                splashColor: ChanzoColors.transparent,
-                                highlightColor: ChanzoColors.transparent,
-                                onTap: () {
-                                  Navigator.push(context, MaterialPageRoute(
-                                    builder: (context) {
-                                      return const KiotaPayResetPasswordEmail();
-                                    },
-                                  ));
-                                },
-                                child: Text("Forgot_Password".tr,
-                                    style: pregular.copyWith(
-                                        fontSize: 14,
-                                        color: ChanzoColors.primary)),
-                              ),
-                            ],
-                          ),
-                          SizedBox(
-                            height: 10,
-                          ),
-                          InkWell(
-                            splashColor: ChanzoColors.transparent,
-                            highlightColor: ChanzoColors.transparent,
-                            onTap: () async {
-                              loginWithEmail();
-                              print('Login btn clicked');
-                            },
-                            child: Container(
-                              height: height / 15,
-                              width: width / 1,
-                              decoration: BoxDecoration(
-                                  color: ChanzoColors.primary,
-                                  borderRadius: BorderRadius.circular(50)),
-                              child: Center(
-                                child: Text("Log in to your account".tr,
-                                    style: psemibold.copyWith(
-                                        fontSize: 14,
-                                        color: ChanzoColors.white)),
+                                  onPressed: _togglePasswordStatus,
+                                ),
+                                filled: true,
+                                fillColor: Colors.grey.shade50,
                               ),
                             ),
-                          ),
-                          SizedBox(
-                            height: height / 100,
-                          ),
-                          // isBioMetricEnabled
-                          //     ? InkWell(
-                          //         splashColor:
-                          //             ChanzoColors.primary.withOpacity(0.5),
-                          //         highlightColor:
-                          //             ChanzoColors.primary.withOpacity(0.3),
-                          //         onTap: () async {
-                          //           await LoginWithBiometric();
-                          //           print('Biometric btn clicked');
-                          //         },
-                          //         child: Material(
-                          //           type: MaterialType.card,
-                          //           // Use transparency for a clean circle effect
-                          //           borderRadius: BorderRadius.circular(50),
-                          //           child: Container(
-                          //             height: height / 15,
-                          //             width: width / 1,
-                          //             decoration: BoxDecoration(
-                          //                 color: ChanzoColors.secondary,
-                          //                 borderRadius:
-                          //                     BorderRadius.circular(50)),
-                          //             child: Center(
-                          //               child: Row(
-                          //                 mainAxisAlignment:
-                          //                     MainAxisAlignment.center,
-                          //                 children: [
-                          //                   Icon(
-                          //                     Icons.fingerprint,
-                          //                     color: ChanzoColors.primary,
-                          //                     size: 24.0,
-                          //                   ),
-                          //                   SizedBox(
-                          //                     width: width / 96,
-                          //                   ),
-                          //                   Text(
-                          //                     "Biometric/Face IDs".tr,
-                          //                     style: pmedium_md.copyWith(
-                          //                         color: ChanzoColors.primary),
-                          //                   ),
-                          //                 ],
-                          //               ),
-                          //             ),
-                          //           ),
-                          //         ),
-                          //       )
-                          //     : SizedBox(),
-                          SizedBox(
-                            height: height / 60,
-                          ),
-                          Row(children: <Widget>[
-                            Expanded(child: Divider()),
-                            Text(" New user? "),
-                            Expanded(child: Divider()),
-                          ]),
-                          // : Container(),
-                          SizedBox(
-                            height: height / 36,
-                          ),
-                          // isBioMetricEnabled
-                          //     ?
-                          InkWell(
-                            splashColor: ChanzoColors.transparent,
-                            highlightColor: ChanzoColors.transparent,
-                            onTap: () {
-                              // Navigator.push(context, MaterialPageRoute(
-                              //   builder: (context) {
-                              //     return KiotaPayVerifyCode();
-                              //   },
-                              // ));
+                          ],
+                        ),
 
-                              awesomeDialog(
+                        SizedBox(height: height / 40),
+
+                        // Remember me & Forgot password
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            // Remember Me
+                            Row(
+                              children: [
+                                Transform.scale(
+                                  scale: 0.9,
+                                  child: Switch.adaptive(
+                                    activeColor: ChanzoColors.primary,
+                                    activeTrackColor: ChanzoColors.primary.withOpacity(0.5),
+                                    value: _rememberMe,
+                                    onChanged: (value) {
+                                      setState(() {
+                                        _rememberMe = value;
+                                      });
+                                      _saveRememberMe(value);
+                                    },
+                                  ),
+                                ),
+                                SizedBox(width: 4),
+                                Text(
+                                  "Remember_Me".tr,
+                                  style: pregular.copyWith(
+                                    fontSize: 14,
+                                    color: Colors.grey.shade700,
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            // Forgot Password
+                            InkWell(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const KiotaPayResetPasswordEmail(),
+                                  ),
+                                );
+                              },
+                              child: Text(
+                                "Forgot_Password".tr,
+                                style: pregular.copyWith(
+                                  fontSize: 14,
+                                  color: ChanzoColors.primary,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        SizedBox(height: height / 30),
+
+                        // Login button
+                        InkWell(
+                          onTap: () async {
+                            if (_selectedCountry == null) {
+                              showSnackBar(
                                 context,
-                                "Error",
-                                "Coming Soon",
-                                true,
-                                DialogType.error,
-                                ChanzoColors.secondary,
-                              )..show();
-                            },
-                            child: Container(
-                              height: height / 15,
-                              width: width / 1,
-                              decoration: BoxDecoration(
-                                  color: ChanzoColors.transparent,
-                                  borderRadius: BorderRadius.circular(50),
-                                  border:
-                                      Border.all(color: ChanzoColors.primary)),
-                              child: Center(
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      "Book a Demo".tr,
-                                      style: pmedium_md.copyWith(
-                                          color: ChanzoColors.primary),
-                                    ),
-                                    SizedBox(
-                                      width: width / 96,
-                                    ),
-                                    Icon(
-                                      Icons.arrow_right_alt,
-                                      color: ChanzoColors.primary,
-                                      size: 24.0,
-                                    ),
-                                  ],
+                                "Please select a country first",
+                                Colors.red,
+                                2.00,
+                                2,
+                                3,
+                              );
+                              return;
+                            }
+                            await _saveCountry(_selectedCountry!);
+                            loginWithEmail();
+                          },
+                          child: Container(
+                            height: height / 14,
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: ChanzoColors.primary,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: ChanzoColors.primary.withOpacity(0.3),
+                                  blurRadius: 8,
+                                  offset: Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Center(
+                              child: _isLoading
+                                  ? SizedBox(
+                                height: 24,
+                                width: 24,
+                                child: CircularProgressIndicator(
+                                  color: ChanzoColors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                                  : Text(
+                                "Log in to your account".tr,
+                                style: psemibold.copyWith(
+                                  fontSize: 16,
+                                  color: ChanzoColors.white,
                                 ),
                               ),
                             ),
                           ),
-                          // : Container(),
-                          // Row(
-                          //   mainAxisAlignment: MainAxisAlignment.center,
-                          //   children: [
-                          //     Text("Im_a_new_user".tr,
-                          //         style: pregular.copyWith(
-                          //             fontSize: 14,
-                          //             color: ChanzoColors.textgrey)),
-                          //     SizedBox(
-                          //       width: width / 96,
-                          //     ),
-                          //     InkWell(
-                          //       splashColor: ChanzoColors.transparent,
-                          //       highlightColor: ChanzoColors.transparent,
-                          //       onTap: () {
-                          //         Navigator.push(context, MaterialPageRoute(
-                          //           builder: (context) {
-                          //             return const BankPickSignUp();
-                          //           },
-                          //         ));
-                          //       },
-                          //       child: Text("Sign_Up".tr,
-                          //           style: pmedium.copyWith(
-                          //               fontSize: 14,
-                          //               color: ChanzoColors.primary)),
-                          //     ),
-                          //   ],
-                          // )
-                        ],
-                      ),
-                    ],
+                        ),
+
+                        SizedBox(height: height / 40),
+
+                        // Optional: Add a loading indicator if needed
+                        if (_isLoading)
+                          Center(
+                            child: CircularProgressIndicator(
+                              color: ChanzoColors.primary,
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

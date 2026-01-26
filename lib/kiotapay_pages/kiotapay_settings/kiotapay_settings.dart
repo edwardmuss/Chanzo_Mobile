@@ -25,6 +25,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import '../../globalclass/choose_student_page.dart';
 import '../../globalclass/kiotapay_icons.dart';
+import '../Examination/performance_controller.dart';
 import 'kiotapay_editprofile.dart';
 
 class KiotaPaySettings extends StatefulWidget {
@@ -795,7 +796,7 @@ class _KiotaPaySettingsState extends State<KiotaPaySettings> {
                                         color: ChanzoColors.textgrey),
                                   ),
                                   SizedBox(height: 20),
-                                  authController.userRole == 'parent'
+                                  authController.shouldShowSwitcherButton
                                       ? Container(
                                           decoration: BoxDecoration(
                                               color: Theme.of(context).cardColor,
@@ -805,12 +806,28 @@ class _KiotaPaySettingsState extends State<KiotaPaySettings> {
                                               borderRadius: BorderRadius.all(
                                                   Radius.circular(30))),
                                           child: TextIconButton(
-                                            onPressed: () {
-                                              Get.to(() => ChooseStudentPage());
+                                            onPressed: () async {
+                                              // if (Navigator.canPop(context)) Navigator.pop(context);
+
+                                              await openContextSwitcher(
+                                                context,
+                                                onContextChanged: () async {
+                                                  authController.isStudentListExpanded.value = false;
+                                                  authController.ensureSelectedStudentInActiveBranch();
+                                                  authController.ensureSelectedStudentInActiveBranch();
+                                                  await refreshUserProfile(context);
+                                                  await Get.find<PerformanceController>().refreshData();
+                                                },
+                                                onStudentChanged: () async {
+                                                  authController.isStudentListExpanded.value = false;
+                                                  await refreshUserProfile(context);
+                                                  await Get.find<PerformanceController>().refreshData();
+                                                },
+                                              );
                                             },
                                             icon: Icons.switch_account,
                                             leftIcon: Icons.chevron_right,
-                                            label: 'Switch Student',
+                                            label: 'Switch Account',
                                           ),
                                         )
                                       : SizedBox(),

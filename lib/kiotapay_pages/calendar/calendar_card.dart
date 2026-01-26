@@ -30,22 +30,22 @@ class CalendarCard extends StatelessWidget {
               // Category badge and title
               Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: event.categoryColor,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      event.category.toUpperCase(),
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: event.categoryTextColor,
-                      ),
-                    ),
-                  ),
-                  const Spacer(),
+                  // Container(
+                  //   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  //   decoration: BoxDecoration(
+                  //     color: event.categoryColor,
+                  //     borderRadius: BorderRadius.circular(12),
+                  //   ),
+                  //   child: Text(
+                  //     event.category.toUpperCase(),
+                  //     style: TextStyle(
+                  //       fontSize: 12,
+                  //       fontWeight: FontWeight.bold,
+                  //       color: event.categoryTextColor,
+                  //     ),
+                  //   ),
+                  // ),
+                  // const Spacer(),
                   Text(
                     _formatDateRange(event.eventDate, event.eventEndDate),
                     style: Theme.of(context).textTheme.bodySmall,

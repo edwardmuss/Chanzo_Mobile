@@ -128,17 +128,32 @@ class _TimetableScreenState extends State<TimetableScreen>
             );
           }
 
-          final days = timetable.keys.toList();
+          final days = timetable.keys.toList()
+            ..sort((a, b) {
+              const order = {
+                "Monday": 1,
+                "Tuesday": 2,
+                "Wednesday": 3,
+                "Thursday": 4,
+                "Friday": 5,
+                "Saturday": 6,
+                "Sunday": 7,
+              };
+              return order[a]!.compareTo(order[b]!);
+            });
 
           // Determine current day index
           final today = DateTime.now();
-          final currentDayName = DateFormat('EEEE').format(today);
-          final currentDayIndex = today.weekday % 7;
+          // final currentDayName = DateFormat('EEEE').format(today);
+          // final currentDayIndex = today.weekday % 7;
+
+          final currentDayName = DateFormat('EEEE').format(today); // "Thursday"
+          final currentDayIndex = days.indexOf(currentDayName); // find exact index
 
           _tabController = TabController(
             length: days.length,
             vsync: this,
-            initialIndex: currentDayIndex - 1,
+            initialIndex: currentDayIndex >= 0 ? currentDayIndex : 0,
           );
 
           return Column(
@@ -203,7 +218,7 @@ class _TimetableScreenState extends State<TimetableScreen>
         },
         tabs: days.map((day) {
           final index = days.indexOf(day);
-          final date = today.add(Duration(days: index - currentDayIndex + 1));
+          final date = today.add(Duration(days: index - currentDayIndex));
           final isToday = day == currentDayName;
           final isSelected = _tabController.index == index;
 

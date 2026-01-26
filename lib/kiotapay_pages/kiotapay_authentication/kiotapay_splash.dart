@@ -86,10 +86,10 @@ class _KiotaPaySplashState extends State<KiotaPaySplash> {
           }
 
           // Refresh user profile
-          await refreshUserProfile(context);
+          // await refreshUserProfile(context);
 
           // Fetch balance
-          await authController.fetchAndCacheFeeBalance();
+          // await authController.fetchAndCacheFeeBalance();
 
           Get.off(() => KiotaPayDashboard('0'));
 

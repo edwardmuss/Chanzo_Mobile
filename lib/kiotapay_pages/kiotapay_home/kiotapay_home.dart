@@ -101,10 +101,11 @@ class _KiotaPayHomeState extends State<KiotaPayHome> {
     });
     checkForUpdate();
     _loadShowBalancePreference();
+    refreshUserProfile(context);
     authController.fetchAndCacheFeeBalance();
 
     Get.put(PerformanceController());
-    Get.find<PerformanceController>().loadPerformance();
+    Get.find<PerformanceController>().loadPerformance(academic_session_id: authController.currentAcademicSessionID);
     // Get.find<PerformanceController>().loadStudentExamTrend();
     // getPermissions();
     isLoginedIn();
@@ -275,7 +276,7 @@ class _KiotaPayHomeState extends State<KiotaPayHome> {
     var body = {"amount": amount, "phoneNumber": phone};
     showLoading('Initiating...');
     try {
-      var url = Uri.parse(KiotaPayConstants.mpesaStkPush);
+      var url = Uri.parse(KiotaPayConstants.mpesaPaybillStkPush);
       http.Response response =
           await http.post(url, body: jsonEncode(body), headers: headers);
 

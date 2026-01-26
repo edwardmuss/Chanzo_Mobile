@@ -25,12 +25,13 @@ class PaymentResponse {
 
   factory PaymentResponse.fromJson(Map<String, dynamic> json) {
     return PaymentResponse(
-      success: json['success'],
-      message: json['message'],
-      data: (json['data'] as List)
-          .map((payment) => Payment.fromJson(payment))
-          .toList(),
-      pagination: Pagination.fromJson(json['pagination']),
+      success: json['success'] as bool? ?? false,
+      message: json['message'] as String? ?? '',
+      data: (json['data'] as List<dynamic>?)
+          ?.map((payment) => Payment.fromJson(payment as Map<String, dynamic>))
+          .toList() ??
+          [],
+      pagination: Pagination.fromJson(json['pagination'] as Map<String, dynamic>? ?? {}),
     );
   }
 }
@@ -102,21 +103,23 @@ class Payment {
 
   factory Payment.fromJson(Map<String, dynamic> json) {
     return Payment(
-      id: json['id'],
-      studentId: json['student_id'],
-      feeCategoryId: json['fee_category_id'],
-      accountId: json['account_id'],
-      transId: json['trans_id'],
-      method: json['method'],
-      amount: double.parse(json['amount'].toString()),
-      balance: json['balance'] != null ? double.parse(json['balance'].toString()) : null,
-      paymentDate: DateTime.parse(json['payment_date']),
-      paymentType: json['payment_type'],
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: DateTime.parse(json['updated_at']),
-      feeCategory: json['fee_category'] != null ? FeeCategory.fromJson(json['fee_category']) : null,
-      account: Account.fromJson(json['account']),
-      student: Student.fromJson(json['student']),
+      id: json['id'] as int? ?? 0,
+      studentId: json['student_id'] as int? ?? 0,
+      feeCategoryId: json['fee_category_id'] as int?,
+      accountId: json['account_id'] as int? ?? 0,
+      transId: json['trans_id'] as String? ?? '',
+      method: json['method'] as String? ?? '',
+      amount: double.tryParse(json['amount']?.toString() ?? '0') ?? 0.0,
+      balance: json['balance'] != null ? double.tryParse(json['balance']?.toString() ?? '0') : null,
+      paymentDate: DateTime.tryParse(json['payment_date'] as String? ?? '') ?? DateTime.now(),
+      paymentType: json['payment_type'] as String? ?? '',
+      createdAt: DateTime.tryParse(json['created_at'] as String? ?? '') ?? DateTime.now(),
+      updatedAt: DateTime.tryParse(json['updated_at'] as String? ?? '') ?? DateTime.now(),
+      feeCategory: json['fee_category'] != null
+          ? FeeCategory.fromJson(json['fee_category'] as Map<String, dynamic>?)
+          : null,
+      account: Account.fromJson(json['account'] as Map<String, dynamic>? ?? {}),
+      student: Student.fromJson(json['student'] as Map<String, dynamic>? ?? {}),
     );
   }
 }
@@ -155,18 +158,16 @@ class FeeCategory {
   });
 
   factory FeeCategory.fromJson(Map<String, dynamic>? json) {
-    if (json == null) {
-      throw Exception("FeeCategory JSON is null");
-    }
+    json ??= {};
 
     return FeeCategory(
-      id: json['id'] ?? 0,
-      schoolId: json['school_id'] ?? 0,
-      branchId: json['branch_id'] ?? 0,
-      name: json['name'] ?? 'Uncategorized',
-      description: json['description'],
-      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : DateTime.now(),
-      updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at']) : DateTime.now(),
+      id: json['id'] as int? ?? 0,
+      schoolId: json['school_id'] as int? ?? 0,
+      branchId: json['branch_id'] as int? ?? 0,
+      name: json['name'] as String? ?? 'Uncategorized',
+      description: json['description'] as String?,
+      createdAt: DateTime.tryParse(json['created_at'] as String? ?? '') ?? DateTime.now(),
+      updatedAt: DateTime.tryParse(json['updated_at'] as String? ?? '') ?? DateTime.now(),
     );
   }
 }
@@ -232,22 +233,24 @@ class Account {
     required this.updatedAt,
   });
 
-  factory Account.fromJson(Map<String, dynamic> json) {
+  factory Account.fromJson(Map<String, dynamic>? json) {
+    json ??= {};
+
     return Account(
-      id: json['id'],
-      branchId: json['branch_id'],
-      accountTypeId: json['account_type_id'],
-      parentId: json['parent_id'],
-      name: json['name'],
-      code: json['code'],
-      currencyCode: json['currency_code'],
-      openingBalance: json['opening_balance'],
-      balanceType: json['balance_type'],
-      isSystemAccount: json['is_system_account'],
-      isActive: json['is_active'],
-      description: json['description'],
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: DateTime.parse(json['updated_at']),
+      id: json['id'] as int? ?? 0,
+      branchId: json['branch_id'] as int?,
+      accountTypeId: json['account_type_id'] as int? ?? 0,
+      parentId: json['parent_id'] as int?,
+      name: json['name'] as String? ?? '',
+      code: json['code'] as String? ?? '',
+      currencyCode: json['currency_code'] as String? ?? '',
+      openingBalance: json['opening_balance'] as String? ?? '0',
+      balanceType: json['balance_type'] as String?,
+      isSystemAccount: json['is_system_account'] as int? ?? 0,
+      isActive: json['is_active'] as int? ?? 0,
+      description: json['description'] as String?,
+      createdAt: DateTime.tryParse(json['created_at'] as String? ?? '') ?? DateTime.now(),
+      updatedAt: DateTime.tryParse(json['updated_at'] as String? ?? '') ?? DateTime.now(),
     );
   }
 }
@@ -290,63 +293,6 @@ class Student {
   @HiveField(11)
   final DateTime dob;
 
-  @HiveField(12)
-  final int initialClassId;
-
-  @HiveField(13)
-  final int initialStreamId;
-
-  @HiveField(14)
-  final int initialTermId;
-
-  @HiveField(15)
-  final int initialAcademicSessionId;
-
-  @HiveField(16)
-  final DateTime enrolDate;
-
-  @HiveField(17)
-  final String gender;
-
-  @HiveField(18)
-  final String type;
-
-  @HiveField(19)
-  final String term;
-
-  @HiveField(20)
-  final String year;
-
-  @HiveField(21)
-  final String transport;
-
-  @HiveField(22)
-  final String? bloodGroup;
-
-  @HiveField(23)
-  final String? allergies;
-
-  @HiveField(24)
-  final String? medicalInfo;
-
-  @HiveField(25)
-  final String? photoPath;
-
-  @HiveField(26)
-  final int active;
-
-  @HiveField(27)
-  final int graduated;
-
-  @HiveField(28)
-  final DateTime createdAt;
-
-  @HiveField(29)
-  final DateTime updatedAt;
-
-  @HiveField(30)
-  final DateTime? deletedAt;
-
   @HiveField(31)
   final Branch branch;
 
@@ -363,62 +309,26 @@ class Student {
     required this.estateId,
     required this.admissionNo,
     required this.dob,
-    required this.initialClassId,
-    required this.initialStreamId,
-    required this.initialTermId,
-    required this.initialAcademicSessionId,
-    required this.enrolDate,
-    required this.gender,
-    required this.type,
-    required this.term,
-    required this.year,
-    required this.transport,
-    this.bloodGroup,
-    this.allergies,
-    this.medicalInfo,
-    this.photoPath,
-    required this.active,
-    required this.graduated,
-    required this.createdAt,
-    required this.updatedAt,
-    this.deletedAt,
     required this.branch,
   });
 
-  factory Student.fromJson(Map<String, dynamic> json) {
+  factory Student.fromJson(Map<String, dynamic>? json) {
+    json ??= {};
+
     return Student(
-      id: json['id'],
-      classId: json['class_id'],
-      streamId: json['stream_id'],
-      userId: json['user_id'],
-      schoolId: json['school_id'],
-      branchId: json['branch_id'],
-      zoneId: json['zone_id'],
-      termId: json['term_id'],
-      academicSessionId: json['academic_session_id'],
-      estateId: json['estate_id'],
-      admissionNo: json['admission_no'],
-      dob: DateTime.parse(json['dob']),
-      initialClassId: json['initial_class_id'],
-      initialStreamId: json['initial_stream_id'],
-      initialTermId: json['initial_term_id'],
-      initialAcademicSessionId: json['initial_academic_session_id'],
-      enrolDate: DateTime.parse(json['enrol_date']),
-      gender: json['gender'],
-      type: json['type'],
-      term: json['term'],
-      year: json['year'],
-      transport: json['transport'],
-      bloodGroup: json['blood_group'],
-      allergies: json['allergies'],
-      medicalInfo: json['medical_info'],
-      photoPath: json['photo_path'],
-      active: json['active'],
-      graduated: json['graduated'],
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: DateTime.parse(json['updated_at']),
-      deletedAt: json['deleted_at'] != null ? DateTime.parse(json['deleted_at']) : null,
-      branch: Branch.fromJson(json['branch']),
+      id: json['id'] as int? ?? 0,
+      classId: json['class_id'] as int? ?? 0,
+      streamId: json['stream_id'] as int? ?? 0,
+      userId: json['user_id'] as int? ?? 0,
+      schoolId: json['school_id'] as int? ?? 0,
+      branchId: json['branch_id'] as int? ?? 0,
+      zoneId: json['zone_id'] as int? ?? 0,
+      termId: json['term_id'] as int? ?? 0,
+      academicSessionId: json['academic_session_id'] as int? ?? 0,
+      estateId: json['estate_id'] as int? ?? 0,
+      admissionNo: json['admission_no'] as String? ?? '',
+      dob: DateTime.tryParse(json['dob'] as String? ?? '') ?? DateTime.now(),
+      branch: Branch.fromJson(json['branch'] as Map<String, dynamic>?),
     );
   }
 }
@@ -540,36 +450,38 @@ class Branch {
     required this.updatedAt,
   });
 
-  factory Branch.fromJson(Map<String, dynamic> json) {
+  factory Branch.fromJson(Map<String, dynamic>? json) {
+    json ??= {};
+
     return Branch(
-      id: json['id'],
-      schoolId: json['school_id'],
-      name: json['name'],
-      motto: json['motto'],
-      address: json['address'],
-      contact: json['contact'],
-      email: json['email'],
-      website: json['website'],
-      smsBalance: json['sms_balance'],
-      smsPricing: json['sms_pricing'],
-      paymentDetails: json['payment_details'],
-      invoiceNotes: json['invoice_notes'],
-      receiptNotes: json['receipt_notes'],
-      kraPin: json['kra_pin'],
-      admissionPrefix: json['admission_prefix'],
-      admissionSuffix: json['admission_suffix'],
-      juniorSecAdmissionPrefix: json['junior_sec_admission_prefix'],
-      highSchoolPrefix: json['high_school_prefix'],
-      highSchoolDetails: json['high_school_details'],
-      schoolLogo: json['school_logo'],
-      accountStampLogo: json['account_stamp_logo'],
-      reportStampLogo: json['report_stamp_logo'],
-      juniorSecLogo: json['junior_sec_logo'],
-      highSchoolLogo: json['high_school_logo'],
-      primaryColor: json['primary_color'],
-      secondaryColor: json['secondary_color'],
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: DateTime.parse(json['updated_at']),
+      id: json['id'] as int? ?? 0,
+      schoolId: json['school_id'] as int? ?? 0,
+      name: json['name'] as String? ?? '',
+      motto: json['motto'] as String? ?? '',
+      address: json['address'] as String? ?? '',
+      contact: json['contact'] as String? ?? '',
+      email: json['email'] as String? ?? '',
+      website: json['website'] as String?,
+      smsBalance: json['sms_balance'] as String? ?? '0',
+      smsPricing: json['sms_pricing'] as String? ?? '0',
+      paymentDetails: json['payment_details'] as String? ?? '',
+      invoiceNotes: json['invoice_notes'] as String? ?? '',
+      receiptNotes: json['receipt_notes'] as String? ?? '',
+      kraPin: json['kra_pin'] as String?,
+      admissionPrefix: json['admission_prefix'] as String?,
+      admissionSuffix: json['admission_suffix'] as String?,
+      juniorSecAdmissionPrefix: json['junior_sec_admission_prefix'] as String?,
+      highSchoolPrefix: json['high_school_prefix'] as String?,
+      highSchoolDetails: json['high_school_details'] as String?,
+      schoolLogo: json['school_logo'] as String? ?? '',
+      accountStampLogo: json['account_stamp_logo'] as String?,
+      reportStampLogo: json['report_stamp_logo'] as String?,
+      juniorSecLogo: json['junior_sec_logo'] as String?,
+      highSchoolLogo: json['high_school_logo'] as String?,
+      primaryColor: json['primary_color'] as String? ?? '#000000',
+      secondaryColor: json['secondary_color'] as String? ?? '#000000',
+      createdAt: DateTime.tryParse(json['created_at'] as String? ?? '') ?? DateTime.now(),
+      updatedAt: DateTime.tryParse(json['updated_at'] as String? ?? '') ?? DateTime.now(),
     );
   }
 }
@@ -603,14 +515,16 @@ class Pagination {
     required this.to,
   });
 
-  factory Pagination.fromJson(Map<String, dynamic> json) {
+  factory Pagination.fromJson(Map<String, dynamic>? json) {
+    json ??= {};
+
     return Pagination(
-      total: json['total'],
-      perPage: json['per_page'],
-      currentPage: json['current_page'],
-      lastPage: json['last_page'],
-      from: json['from'] ?? 0,
-      to: json['to'] ?? 0,
+      total: json['total'] as int? ?? 0,
+      perPage: json['per_page'] as int? ?? 0,
+      currentPage: json['current_page'] as int? ?? 1,
+      lastPage: json['last_page'] as int? ?? 1,
+      from: json['from'] as int? ?? 0,
+      to: json['to'] as int? ?? 0,
     );
   }
 }

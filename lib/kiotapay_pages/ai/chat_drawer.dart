@@ -4,6 +4,8 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:shimmer/shimmer.dart';
 
+import '../../globalclass/kiotapay_constants.dart';
+
 class ChatSidebar extends StatefulWidget {
   final String userId;
   final Function(String chatId) onChatSelected;
@@ -44,11 +46,11 @@ class _ChatSidebarState extends State<ChatSidebar> {
       nextCursor = null;
     }
 
-    final baseUrl = "https://ai.chanzo.co.ke/users/${widget.userId}/sessions?limit=10";
+    final baseUrl = "${KiotaPayConstants.fetchSessions}/${widget.userId}/sessions?limit=10";
     final url = Uri.parse(baseUrl +
         (nextCursor != null ? "&cursor=${Uri.encodeComponent(nextCursor!)}" : "") +
         (searchTerm.isNotEmpty ? "&search=${Uri.encodeComponent(searchTerm)}" : ""));
-
+    print("Drawer sessionUrl is $url");
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {
@@ -115,7 +117,7 @@ class _ChatSidebarState extends State<ChatSidebar> {
     );
 
     if (newTitle != null && newTitle.isNotEmpty && newTitle != session.title) {
-      final url = Uri.parse('https://ai.chanzo.co.ke/sessions/${session.id}');
+      final url = Uri.parse('https://ai.chanzo.co.ke/api/v1/sessions/${session.id}');
       final response = await http.patch(
         url,
         headers: {'Content-Type': 'application/json'},
@@ -147,7 +149,7 @@ class _ChatSidebarState extends State<ChatSidebar> {
     );
 
     if (confirmed == true) {
-      final url = Uri.parse('https://ai.chanzo.co.ke/sessions/${session.id}');
+      final url = Uri.parse('https://ai.chanzo.co.ke/api/v1/sessions/${session.id}');
       final response = await http.delete(url);
 
       if (response.statusCode == 200) {

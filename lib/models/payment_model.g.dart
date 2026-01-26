@@ -273,25 +273,6 @@ class StudentAdapter extends TypeAdapter<Student> {
       estateId: fields[9] as int,
       admissionNo: fields[10] as String,
       dob: fields[11] as DateTime,
-      initialClassId: fields[12] as int,
-      initialStreamId: fields[13] as int,
-      initialTermId: fields[14] as int,
-      initialAcademicSessionId: fields[15] as int,
-      enrolDate: fields[16] as DateTime,
-      gender: fields[17] as String,
-      type: fields[18] as String,
-      term: fields[19] as String,
-      year: fields[20] as String,
-      transport: fields[21] as String,
-      bloodGroup: fields[22] as String?,
-      allergies: fields[23] as String?,
-      medicalInfo: fields[24] as String?,
-      photoPath: fields[25] as String?,
-      active: fields[26] as int,
-      graduated: fields[27] as int,
-      createdAt: fields[28] as DateTime,
-      updatedAt: fields[29] as DateTime,
-      deletedAt: fields[30] as DateTime?,
       branch: fields[31] as Branch,
     );
   }
@@ -325,43 +306,6 @@ class StudentAdapter extends TypeAdapter<Student> {
       ..writeByte(11)
       ..write(obj.dob)
       ..writeByte(12)
-      ..write(obj.initialClassId)
-      ..writeByte(13)
-      ..write(obj.initialStreamId)
-      ..writeByte(14)
-      ..write(obj.initialTermId)
-      ..writeByte(15)
-      ..write(obj.initialAcademicSessionId)
-      ..writeByte(16)
-      ..write(obj.enrolDate)
-      ..writeByte(17)
-      ..write(obj.gender)
-      ..writeByte(18)
-      ..write(obj.type)
-      ..writeByte(19)
-      ..write(obj.term)
-      ..writeByte(20)
-      ..write(obj.year)
-      ..writeByte(21)
-      ..write(obj.transport)
-      ..writeByte(22)
-      ..write(obj.bloodGroup)
-      ..writeByte(23)
-      ..write(obj.allergies)
-      ..writeByte(24)
-      ..write(obj.medicalInfo)
-      ..writeByte(25)
-      ..write(obj.photoPath)
-      ..writeByte(26)
-      ..write(obj.active)
-      ..writeByte(27)
-      ..write(obj.graduated)
-      ..writeByte(28)
-      ..write(obj.createdAt)
-      ..writeByte(29)
-      ..write(obj.updatedAt)
-      ..writeByte(30)
-      ..write(obj.deletedAt)
       ..writeByte(31)
       ..write(obj.branch);
   }

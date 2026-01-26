@@ -43,6 +43,7 @@ class _KiotaPayDashboardState extends State<KiotaPayDashboard> with WidgetsBindi
   int _selectedItemIndex = 0;
   bool _isAuthenticating = false;
   DateTime? _lastActiveTime;
+  DateTime? _lastAuthTime;
   Timer? _inactivityTimer;
 
   @override
@@ -90,14 +91,6 @@ class _KiotaPayDashboardState extends State<KiotaPayDashboard> with WidgetsBindi
     super.dispose();
   }
 
-  // @override
-  // void didChangeAppLifecycleState(AppLifecycleState state) {
-  //   if (state == AppLifecycleState.resumed) {
-  //     print('App resumed, refreshing profile...');
-  //     refreshUserProfile(context); // Refresh profile on resume
-  //   }
-  // }
-
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) async {
     super.didChangeAppLifecycleState(state);
@@ -108,8 +101,9 @@ class _KiotaPayDashboardState extends State<KiotaPayDashboard> with WidgetsBindi
       final lastActive = await _getLastActiveTime();
       if (lastActive != null &&
           DateTime.now().difference(lastActive) > const Duration(minutes: 1)) {
-        _checkBiometricAuth();
+        // _checkBiometricAuth();
       }
+      _checkBiometricAuth();
       refreshUserProfile(context);
     }
   }
@@ -130,7 +124,7 @@ class _KiotaPayDashboardState extends State<KiotaPayDashboard> with WidgetsBindi
     _inactivityTimer?.cancel();
     _inactivityTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
       if (_lastActiveTime != null &&
-          DateTime.now().difference(_lastActiveTime!) > const Duration(minutes: 2)) {
+          DateTime.now().difference(_lastActiveTime!) > const Duration(minutes: 1)) {
         _requireBiometricAuth();
       }
     });
@@ -138,6 +132,13 @@ class _KiotaPayDashboardState extends State<KiotaPayDashboard> with WidgetsBindi
 
   Future<void> _checkBiometricAuth() async {
     if (_isAuthenticating) return;
+
+    // Skip if last authentication was recent (< 1 min ago)
+    if (_lastAuthTime != null &&
+        DateTime.now().difference(_lastAuthTime!) < const Duration(minutes: 1)) {
+      return;
+    }
+
     _isAuthenticating = true;
 
     try {
@@ -145,9 +146,13 @@ class _KiotaPayDashboardState extends State<KiotaPayDashboard> with WidgetsBindi
       final userId = prefs.getString('uuid');
 
       if (userId != null) {
-        final isBiometricEnabled = prefs.getBool('BiometricSwitchState_$userId') ?? false;
+        final isBiometricEnabled =
+            prefs.getBool('BiometricSwitchState_$userId') ?? false;
         if (isBiometricEnabled) {
-          await _requireBiometricAuth();
+          final success = await _requireBiometricAuth();
+          if (success) {
+            _lastAuthTime = DateTime.now(); // mark successful auth time
+          }
         }
       }
     } finally {
@@ -155,11 +160,13 @@ class _KiotaPayDashboardState extends State<KiotaPayDashboard> with WidgetsBindi
     }
   }
 
-  Future<void> _requireBiometricAuth() async {
+  Future<bool> _requireBiometricAuth() async {
     final isAuthenticated = await KiotaPayBiometricAuth.authenticateUser();
     if (!isAuthenticated) {
       SystemNavigator.pop(); // Close the app if biometric fails
+      return false;
     }
+    return true;
   }
 
   void _requirePasswordChange(){

@@ -10,6 +10,7 @@
 #include <file_selector_windows/file_selector_windows.h>
 #include <firebase_core/firebase_core_plugin_c_api.h>
 #include <flutter_secure_storage_windows/flutter_secure_storage_windows_plugin.h>
+#include <in_app_idle_detector/in_app_idle_detector_plugin_c_api.h>
 #include <local_auth_windows/local_auth_plugin.h>
 #include <nb_utils/nb_utils_plugin_c_api.h>
 #include <permission_handler_windows/permission_handler_windows_plugin.h>
@@ -27,6 +28,8 @@ void RegisterPlugins(flutter::PluginRegistry* registry) {
       registry->GetRegistrarForPlugin("FirebaseCorePluginCApi"));
   FlutterSecureStorageWindowsPluginRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("FlutterSecureStorageWindowsPlugin"));
+  InAppIdleDetectorPluginCApiRegisterWithRegistrar(
+      registry->GetRegistrarForPlugin("InAppIdleDetectorPluginCApi"));
   LocalAuthPluginRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("LocalAuthPlugin"));
   NbUtilsPluginCApiRegisterWithRegistrar(

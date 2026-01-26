@@ -5,7 +5,7 @@ import 'package:kiotapay/kiotapay_pages/fees/payment_methods_service.dart';
 import '../../globalclass/chanzo_color.dart';
 import '../../models/payment_methods.dart';
 import '../kiotapay_authentication/AuthController.dart';
-import 'payment_kcb_confirm.dart';
+import 'payment_confirm.dart';
 
 class PaymentMethodsScreen extends StatefulWidget {
   const PaymentMethodsScreen({super.key});
@@ -52,7 +52,10 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
 
   void _showOfflineContent(String? html) {
     final admission = _authController.selectedStudentAdmissionNumber;
-    final parsedHtml = html?.replaceAll('{admission_number}', admission) ?? 'No instructions provided';
+    final parsedHtml = html?.replaceAllMapped(
+      RegExp(r'\{admission_number\}', caseSensitive: false),
+          (match) => admission,
+    ) ?? 'No instructions provided';
 
     showModalBottomSheet(
       context: context,

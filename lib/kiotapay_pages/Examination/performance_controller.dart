@@ -25,11 +25,11 @@ class PerformanceController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    loadPerformance();
+    loadPerformance(academic_session_id: authController.currentAcademicSessionID);
   }
 
   /// Loads student performance from cache or API
-  Future<void> loadPerformance({bool refresh = false, int exam_id = 0}) async {
+  Future<void> loadPerformance({bool refresh = false, required int academic_session_id, int exam_id = 0}) async {
     isLoading.value = true;
 
     final box = await Hive.openBox(_cacheKey);
@@ -58,9 +58,11 @@ class PerformanceController extends GetxController {
         KiotaPayConstants.getStudentPerformance,
         queryParameters: {
           'student_id': authController.selectedStudentId,
+          'academic_session_id': academic_session_id,
           if (exam_id != 0) 'exam_id': exam_id,
         },
       );
+      // print(response.data['data']);
       if (response.statusCode == 200) {
         final perf = StudentPerformance.fromJson(response.data);
         data.value = perf;
@@ -70,19 +72,19 @@ class PerformanceController extends GetxController {
       }
     } catch (e) {
       Get.snackbar('Error', "Error loading performance");
-      print("❌ Error: $e");
+      print("❌ loadPerformance Error: $e");
     } finally {
       isLoading.value = false;
     }
   }
 
   /// Loads student performance Trend from cache or API
-  Future<void> loadStudentExamTrend({bool refresh = false, int academic_session_id = 0}) async {
+  Future<void> loadStudentExamTrend({bool refresh = false, required int academic_session_id}) async {
     isLoading.value = true;
 
     final box = await Hive.openBox(_cacheTrendKey);
     final studentId = authController.selectedStudentId;
-    final academic_session_id = authController.currentAcademicSessionID;
+    // final academic_session_id = authController.currentAcademicSessionID;
     final dynamicKey = '${_cacheTrendKey}_$studentId';
 
     // Load from cache
@@ -118,7 +120,7 @@ class PerformanceController extends GetxController {
       }
     } catch (e) {
       Get.snackbar('Error', "Error loading performance trend");
-      print("❌ Error: $e");
+      print("❌ loadStudentExamTrend Error: $e");
     } finally {
       isLoading.value = false;
     }
@@ -126,8 +128,8 @@ class PerformanceController extends GetxController {
 
   /// Public method to refetch performance data, bypassing cache
   Future<void> refreshData() async {
-    await loadPerformance(refresh: true);
-    await loadStudentExamTrend(refresh: true);
+    await loadPerformance(academic_session_id: authController.currentAcademicSessionID,refresh: true);
+    // await loadStudentExamTrend(academic_session_id: authController.currentAcademicSessionID, refresh: true);
   }
 
   /// Public method to load student performance

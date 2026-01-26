@@ -1,19 +1,57 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:get/get.dart';
 import 'package:kiotapay/globalclass/chanzo_color.dart';
+import 'package:shimmer/shimmer.dart';
 
 import '../globalclass/kiotapay_fontstyle.dart';
 import '../kiotapay_pages/Examination/performance_controller.dart';
 
 class StudentPerformanceDashboard {
-  final PerformanceController ctrl = Get.put(PerformanceController());
-  // Bar Chart for Subject Performance
+  final PerformanceController ctrl = Get.find<PerformanceController>();
+
+  // ---------------- TABLE ----------------
   Widget buildSubjectPerformanceTable() {
     return Obx(() {
+      if (ctrl.data.value == null) {
+        return _emptyCard(
+          title: 'No results',
+          subtitle: 'Try refreshing to view subject summary.',
+          icon: Icons.event_busy,
+        );
+      }
+
+      if (ctrl.isLoading.value) {
+        return Card(
+          elevation: 2,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _shimmerBox(height: 18),
+                const SizedBox(height: 16),
+                _shimmerBox(height: 12),
+                const SizedBox(height: 10),
+                _shimmerBox(height: 12),
+                const SizedBox(height: 10),
+                _shimmerBox(height: 12),
+                const SizedBox(height: 10),
+                _shimmerBox(height: 12),
+              ],
+            ),
+          ),
+        );
+      }
+
       final performance = ctrl.data.value;
-      if (performance == null) {
-        return const SizedBox.shrink();
+      if (performance == null || performance.subjects.isEmpty) {
+        return _emptyCard(
+          title: 'No results',
+          subtitle: 'No subject performance found for the selected exam/date.',
+        );
       }
 
       final subjects = performance.subjects;
@@ -26,70 +64,53 @@ class StudentPerformanceDashboard {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Subject Deviation (Δ)\n${performance.exam.name} - ${performance.exam.term}, ${performance.exam.academicSession}',
+                'Subjects Δ Summary\n${performance.exam.name} - Term ${performance.exam.term}, ${performance.exam.academicSession}',
                 style: pmedium.copyWith(fontSize: 18),
               ),
               const SizedBox(height: 16),
-
-              // Table Header
               Row(
                 children: const [
-                  Expanded(flex: 3, child: Text('Subject', style: TextStyle(fontWeight: FontWeight.bold))),
-                  Expanded(child: Text('Score', style: TextStyle(fontWeight: FontWeight.bold))),
-                  Expanded(child: Text('Δ', style: TextStyle(fontWeight: FontWeight.bold))),
+                  Expanded(flex: 3, child: Text('Subject', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16))),
+                  Expanded(child: Text('Score', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16))),
+                  Expanded(child: Text('Δ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16))),
+                  Expanded(child: Text('', style: TextStyle(fontWeight: FontWeight.bold))),
                 ],
               ),
-              const Divider(color: ChanzoColors.primary80,),
-
-              // Table Rows
+              const Divider(color: ChanzoColors.primary80),
               ...subjects.map((subj) {
-                final deviation = subj.subjectChange;
-                final isPositive = deviation >= 0;
-
+                final score = subj.score.toDouble();
                 return Column(
                   children: [
                     Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 6.0),
+                      padding: const EdgeInsets.symmetric(vertical: 6),
                       child: Row(
                         children: [
-                          Expanded(flex: 3, child: Text(subj.subject)),
-                          // Score
+                          Expanded(flex: 3, child: Text(subj.subjectName)),
                           Expanded(
                             child: Text(
-                              subj.finalScore.toStringAsFixed(1),
+                              score.toStringAsFixed(1),
                               style: TextStyle(
-                                color: _getScoreColor(subj.finalScore.toDouble()),
+                                color: _getScoreColor(score),
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
                           ),
-                          // Deviation with arrow
                           Expanded(
-                            child: Row(
-                              children: [
-                                Text(
-                                  deviation.abs().toStringAsFixed(1),
-                                  style: TextStyle(
-                                    color: isPositive ? Colors.green : Colors.red,
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                Icon(
-                                  isPositive ? Icons.arrow_upward : Icons.arrow_downward,
-                                  size: 14,
-                                  color: isPositive ? Colors.green : Colors.red,
-                                ),
-                              ],
+                            child: Text(
+                              (subj.change ?? '—').toString(),
+                              style: const TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(
+                              subj.trend ?? '—',
+                              style: const TextStyle(fontWeight: FontWeight.w600),
                             ),
                           ),
                         ],
                       ),
                     ),
-                    Divider(
-                      color: ChanzoColors.secondary50,
-                      // height: 2,
-                      thickness: 0.4,
-                    ),
+                    const Divider(color: ChanzoColors.secondary50, thickness: 0.4, height: 2),
                   ],
                 );
               }).toList(),
@@ -100,15 +121,48 @@ class StudentPerformanceDashboard {
     });
   }
 
-  // Bar Chart for Subject Performance
+  // ---------------- BAR CHART ----------------
   Widget buildSubjectPerformanceChart() {
     return Obx(() {
+      if (ctrl.data.value == null) {
+        return _emptyCard(
+          title: 'No results',
+          subtitle: 'Try refreshing to view the performance chart.',
+          icon: Icons.bar_chart_outlined,
+        );
+      }
+
+      if (ctrl.isLoading.value) {
+        return Card(
+          elevation: 2,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _shimmerBox(height: 18),
+                const SizedBox(height: 16),
+                _shimmerBox(height: 280, radius: 16),
+              ],
+            ),
+          ),
+        );
+      }
+
       final performance = ctrl.data.value;
-      if (performance == null) {
-        return const SizedBox.shrink();
+      if (performance == null || performance.subjects.isEmpty) {
+        return _emptyCard(
+          title: 'No results',
+          subtitle: 'No subject performance found for the selected exam/date.',
+        );
       }
 
       final subjects = performance.subjects;
+
+      final maxScore = subjects
+          .map((s) => s.score.toDouble())
+          .fold<double>(0.0, (a, b) => math.max(a, b));
+      final maxY = math.max(100.0, ((maxScore / 10).ceil() * 10).toDouble());
 
       return Card(
         elevation: 4,
@@ -118,73 +172,70 @@ class StudentPerformanceDashboard {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Subjects Performance\n${performance.exam.name} - ${performance.exam.term}, ${performance.exam.academicSession}',
+                'Subjects Performance\n${performance.exam.name} - Term ${performance.exam.term}, ${performance.exam.academicSession}',
                 style: pmedium.copyWith(fontSize: 18),
               ),
               const SizedBox(height: 16),
               SizedBox(
-                height: 300,
+                height: 320,
                 child: BarChart(
                   BarChartData(
                     alignment: BarChartAlignment.spaceAround,
-                    maxY: 100,
+                    maxY: maxY,
                     barTouchData: BarTouchData(enabled: true),
+                    gridData: FlGridData(show: true),
                     titlesData: FlTitlesData(
-                      show: true,
                       topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
                       rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      leftTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 44,
+                          getTitlesWidget: (value, meta) =>
+                              Text(value.toInt().toString(), style: const TextStyle(fontSize: 10)),
+                        ),
+                      ),
                       bottomTitles: AxisTitles(
                         sideTitles: SideTitles(
                           showTitles: true,
-                          // getTitlesWidget: (value, meta) {
-                          //   final index = value.toInt();
-                          //   return Padding(
-                          //     padding: const EdgeInsets.only(top: 8.0),
-                          //     child: Text(
-                          //       index < subjects.length ? subjects[index].subject : '',
-                          //       style: const TextStyle(fontSize: 10),
-                          //       overflow: TextOverflow.ellipsis,
-                          //     ),
-                          //   );
-                          // },
-
+                          reservedSize: 56,
                           getTitlesWidget: (value, meta) {
                             final index = value.toInt();
-                            return Transform.rotate(
-                              angle: -1.55, // -0.5 radians ≈ -30 degrees
-                              child: Padding(
-                                padding: const EdgeInsets.only(top: 8.0),
-                                child: Text(
-                                  index < subjects.length ? subjects[index].subject : '',
-                                  style: const TextStyle(fontSize: 10),
-                                  overflow: TextOverflow.ellipsis,
+                            final label = (index >= 0 && index < subjects.length)
+                                ? subjects[index].subjectName
+                                : '';
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 10),
+                              child: Transform.rotate(
+                                angle: -0.6,
+                                child: SizedBox(
+                                  width: 60,
+                                  child: Text(
+                                    label,
+                                    style: const TextStyle(fontSize: 10),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    textAlign: TextAlign.center,
+                                  ),
                                 ),
                               ),
                             );
                           },
                         ),
                       ),
-                      leftTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          getTitlesWidget: (value, meta) =>
-                              Text('${value.toInt()}%', style: const TextStyle(fontSize: 10)),
-                          reservedSize: 40,
-                        ),
-                      ),
                     ),
                     borderData: FlBorderData(show: false),
                     barGroups: List.generate(subjects.length, (index) {
-                      final score = subjects[index].finalScore;
+                      final score = subjects[index].score.toDouble();
                       return BarChartGroupData(
                         x: index,
                         barRods: [
                           BarChartRodData(
-                            toY: score.toDouble(),
-                            color: _getScoreColor(score.toDouble()),
-                            width: 20,
-                            borderRadius: BorderRadius.circular(4),
-                          )
+                            toY: score,
+                            color: _getScoreColor(score),
+                            width: 18,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
                         ],
                       );
                     }),
@@ -198,12 +249,35 @@ class StudentPerformanceDashboard {
     });
   }
 
-  // Performance Summary Grid (2x2)
+  // ---------------- GRID ----------------
   Widget buildPerformanceGrid() {
     return Obx(() {
+      if (ctrl.data.value == null) {
+        return _emptyCard(
+          title: 'No results',
+          subtitle: 'Try refreshing to view performance summary.',
+          icon: Icons.grid_view,
+        );
+      }
+
+      if (ctrl.isLoading.value) {
+        return GridView.count(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisCount: 2,
+          childAspectRatio: 1.5,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+          children: List.generate(4, (_) => _shimmerBox(height: 90, radius: 14)),
+        );
+      }
+
       final performance = ctrl.data.value;
       if (performance == null) {
-        return const SizedBox.shrink();
+        return _emptyCard(
+          title: 'No results',
+          subtitle: 'No summary found for the selected exam/date.',
+        );
       }
 
       return GridView.count(
@@ -223,49 +297,40 @@ class StudentPerformanceDashboard {
     });
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon) {
-    // Get the current theme brightness
-    final bool isDarkMode = Theme.of(Get.context!).brightness == Brightness.dark;
-
-    return Card(
-      elevation: 1,
-      child: Padding(
-        padding: EdgeInsets.all(3),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 30, color: ChanzoColors.secondary),
-            SizedBox(height: 8),
-            Text(
-              title,
-              style: TextStyle(fontSize: 14, color: Colors.grey),
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
-            ),
-            SizedBox(height: 4),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                // Use white in dark mode, primary color in light mode
-                color: isDarkMode ? Colors.white : ChanzoColors.primary,
-              ),
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
+  // ---------------- TREND CHART ----------------
   Widget buildExamTrendChart() {
     return Obx(() {
-      final performanceTrend = ctrl.trend_data.value;
+      if (ctrl.data.value == null) {
+        return _emptyCard(
+          title: 'No results',
+          subtitle: 'Try refreshing to view trend.',
+          icon: Icons.show_chart,
+        );
+      }
 
+      if (ctrl.isLoading.value) {
+        return Card(
+          elevation: 2,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _shimmerBox(height: 18),
+                const SizedBox(height: 16),
+                _shimmerBox(height: 260, radius: 16),
+              ],
+            ),
+          ),
+        );
+      }
+
+      final performanceTrend = ctrl.trend_data.value;
       if (performanceTrend == null) {
-        return const SizedBox.shrink();
+        return _emptyCard(
+          title: 'No results',
+          subtitle: 'No trend data available for the selection.',
+        );
       }
 
       final trend = performanceTrend.trend;
@@ -281,10 +346,17 @@ class StudentPerformanceDashboard {
         });
       });
 
+      if (examLabels.isEmpty) {
+        return _emptyCard(
+          title: 'No results',
+          subtitle: 'No exams found to plot.',
+        );
+      }
+
       return Card(
         elevation: 4,
         child: Padding(
-          padding: EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -292,8 +364,8 @@ class StudentPerformanceDashboard {
                 'Performance Trend \nLast ${examLabels.length} Exams in ${performanceTrend.session}',
                 style: pmedium.copyWith(fontSize: 18),
               ),
-              SizedBox(height: 16),
-              Container(
+              const SizedBox(height: 16),
+              SizedBox(
                 height: 300,
                 child: LineChart(
                   LineChartData(
@@ -301,44 +373,35 @@ class StudentPerformanceDashboard {
                     maxY: 100,
                     gridData: FlGridData(show: true),
                     titlesData: FlTitlesData(
-                      show: true,
-                      topTitles: AxisTitles(
-                          sideTitles: SideTitles(showTitles: false)),
-                      rightTitles: AxisTitles(
-                          sideTitles: SideTitles(showTitles: false)),
+                      topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
                       bottomTitles: AxisTitles(
                         sideTitles: SideTitles(
                           showTitles: true,
+                          reservedSize: 40,
                           getTitlesWidget: (value, meta) {
-                            int index = value.toInt();
-                            if (index < 0 || index >= examLabels.length) {
-                              return SizedBox();
-                            }
+                            final index = value.toInt();
+                            if (index < 0 || index >= examLabels.length) return const SizedBox.shrink();
                             return Transform.rotate(
                               angle: -1.55,
                               child: Padding(
                                 padding: const EdgeInsets.only(top: 8.0),
                                 child: Text(
                                   examLabels[index],
-                                  style: TextStyle(fontSize: 10),
+                                  style: const TextStyle(fontSize: 10),
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                             );
                           },
-                          reservedSize: 40,
                         ),
                       ),
                       leftTitles: AxisTitles(
                         sideTitles: SideTitles(
                           showTitles: true,
-                          getTitlesWidget: (value, meta) {
-                            return Text(
-                              '${value.toInt()}%',
-                              style: TextStyle(fontSize: 10),
-                            );
-                          },
                           reservedSize: 40,
+                          getTitlesWidget: (value, meta) =>
+                              Text('${value.toInt()}%', style: const TextStyle(fontSize: 10)),
                         ),
                       ),
                     ),
@@ -372,7 +435,85 @@ class StudentPerformanceDashboard {
     });
   }
 
-  // Helper function to determine bar color based on score
+  // ---------------- helpers (unchanged) ----------------
+  Widget _buildStatCard(String title, String value, IconData icon) {
+    final bool isDarkMode = Theme.of(Get.context!).brightness == Brightness.dark;
+
+    return Card(
+      elevation: 1,
+      child: Padding(
+        padding: const EdgeInsets.all(6),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 20, color: ChanzoColors.secondary),
+            const SizedBox(height: 5),
+            Text(
+              title,
+              style: const TextStyle(fontSize: 14, color: Colors.grey),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: isDarkMode ? Colors.white : ChanzoColors.primary,
+              ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _shimmerBox({double height = 16, double radius = 12}) {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey.shade300,
+      highlightColor: Colors.grey.shade100,
+      child: Container(
+        height: height,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(radius),
+        ),
+      ),
+    );
+  }
+
+  Widget _emptyCard({
+    required String title,
+    required String subtitle,
+    IconData icon = Icons.search_off,
+  }) {
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Icon(icon, size: 30, color: ChanzoColors.primary),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 4),
+                  Text(subtitle, style: TextStyle(color: Colors.grey.shade700)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Color _getScoreColor(double score) {
     if (score >= 80) return Colors.green;
     if (score >= 60) return Colors.blue;
@@ -380,3 +521,4 @@ class StudentPerformanceDashboard {
     return Colors.red;
   }
 }
+

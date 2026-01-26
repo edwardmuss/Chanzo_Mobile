@@ -1,70 +1,87 @@
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+import 'AppEnv.dart';
+
 class KiotaPayConstants {
+  static const _secure = FlutterSecureStorage();
+
   static final String currency = "KES ";
   static final bool isLive = true;
-  static final String apiKey = "DA527730128F5D641283CEE7C36D59";
-  static final String apiSecret =
-      "a1a9bc3892f6c3f18a1de1f8d6bb1be0e947947e3beac1ef325b08039b89bfcb147f7f81acf93c105380ec0531786df68a39";
-  static final String sshKey =
-      'AAAAB3NzaC1yc2EAAAADAQABAAACAQD6CFJO3IXVJOFUwqdToHNwtmYTcsc1d9QMzj54LpUg893MfWD3lbBeKJACzmuB9Ubi+VSgPtxdZkQzTR2cxYBig35JHBkD2vYjiElyQQ58H9Hg/bk8bMsLAik2EVcVM9UJ2mvlS4zCV9Gh7KHKHznBZ9YTPe3Y8mWl+NA4i+ZE9G1YvrPYW1llpXzA+EE8uF2UBHLMFJ5qnXjLCiSJLOJHPh923SYqXOgk+cc84JM71yVE8xhxEKF1B3eTAMEVbWUv7kAnZVwXv7KyQrZQpYAsgAtMQ0BY0l2BUqlv3o8HkLiCcgOqNhdnj4vPGFU5kPXa19Zfrxa1BH4I3Pzvky+V8biq3uHzuzOSEipSlIz0+JGnUgKuI5GPu7SM/SnoCKFl5elYMTU84lFQIalqBKmtyNNsgQhQZaMQN4SdlwkkqXYHC/Gg5OMDVaongphma5xUNkYujN5JpfF4oEzaEEQeB7v/qGr2bIsj9+/IbOe2wW+yXOsiokDu5X+mRQ8NhD5RhMB6W0EWdDZmQ1wqhX4LMRLPxClXFU3XY3sEb6cu/FtEGIhSMoQ9zY9XRhKUdjzjwFdhNnbNqPjiU1bZJQFbiI+bQylYXCJof87cwnRN2gOTXFczYtfakkK6rW3uLk70dTSYxhejwJx2To3Ql8eV1kai+MF1eSR19QFnNGXTMQ';
-  static final String baseUrl = isLive
+
+  /// Mutable baseUrl (changes when country changes)
+  static String baseUrl = isLive
       ? 'https://app.chanzo.co.ke/api/v1/'
-      : 'https://antelope-refined-nicely.ngrok-free.app/chanzo_v2/public/api/v1/';
+      : 'https://diamonds-item-motivation-gdp.trycloudflare.com/api/v1/';
 
-  static String webUrl = baseUrl.replaceAll(RegExp(r'api/v1/$'), '');
-  static String fileBaseUrl = webUrl + 'storage';
+  /// Always derived from baseUrl
+  static String get webUrl => baseUrl.replaceAll(RegExp(r'api/v1/$'), '');
+  static String get fileBaseUrl => '${webUrl}storage/';
 
-  // Authentication
-  static final String login = baseUrl + 'auth/login';
-  static final String getUserProfile = baseUrl + 'auth/profile';
-  static final String logout = baseUrl + 'auth/logout';
-  static final String forgotPassword = baseUrl + 'auth/forgot-password';
-  static final String changePassword = baseUrl + 'auth/change-password';
-  static final String changePasswordNewUser = baseUrl + 'auth/change-password/new-user';
-  static final String verifyUserPassword = baseUrl + 'auth/verify-user-password';
+  /// AI base (if also country-based later, make it dynamic too)
+  static String aiUrl = 'https://ai.chanzo.co.ke/api/v1/';
 
-  // Finance and Fee Management
-  static final String getStudentFee = baseUrl + 'fees/student';
-  static final String getStudentFeePdf = baseUrl + 'fees/structure/generate';
-  static final String getStudentFeeReceiptPdf = baseUrl + 'fees/structure/generate/receipt';
-  static final String getRecentPayments = baseUrl + 'fees/student-payments/{student_id}';
-  static final String getRecentYearlyPayments = baseUrl + 'fees/student-payments/monthly/{student_id}';
-  static final String getPaymentsMethods = baseUrl + 'fees/payment-settings';
-  static final String kcbStkPush = baseUrl + 'fees/payments/buni-stk-push-initiate';
-  static final String stkPushStatus = baseUrl + 'fees/payments/check-transaction-status';
+  // ---------------- AI Endpoints (GETTERS) ----------------
+  static String get fetchSessions => '${aiUrl}users';
+  static String get loadMessagesFromSession => '${aiUrl}sessions';
+  static String get sendMessage => '${aiUrl}chat';
 
-  // Timetable
-  static final String getStudentTimetable = baseUrl + 'timetable/student';
-  static final String getTeacherTimetable = baseUrl + 'timetable/teacher';
+  // ---------------- Authentication (GETTERS) ----------------
+  static String get login => '${baseUrl}auth/login';
+  static String get getUserProfile => '${baseUrl}auth/profile';
+  static String get logout => '${baseUrl}auth/logout';
+  static String get forgotPassword => '${baseUrl}auth/forgot-password';
+  static String get changePassword => '${baseUrl}auth/change-password';
+  static String get changePasswordNewUser => '${baseUrl}auth/change-password/new-user';
+  static String get verifyUserPassword => '${baseUrl}auth/verify-user-password';
+  static String get contextGet => '${baseUrl}auth/context';
+  static String get contextSwitch => '${baseUrl}auth/context/switch';
 
-  // Attendance
-  static final String getStudentAttendance = baseUrl + 'attendance/student';
+  // ---------------- Finance and Fee Management (GETTERS) ----------------
+  static String get getStudentFee => '${baseUrl}fees/student';
+  static String get getStudentFeePdf => '${baseUrl}fees/structure/generate';
+  static String get getStudentFeeReceiptPdf => '${baseUrl}fees/structure/generate/receipt';
+  static String get getRecentPayments => '${baseUrl}fees/student-payments/{student_id}';
+  static String get getRecentYearlyPayments => '${baseUrl}fees/student-payments/monthly/{student_id}';
+  static String get getPaymentsMethods => '${baseUrl}fees/payment-settings';
+  static String get kcbStkPush => '${baseUrl}fees/payments/buni-stk-push-initiate';
+  static String get mpesaPaybillStkPush => '${baseUrl}fees/payments/top-up/mpesa';
+  static String get stkPushStatus => '${baseUrl}fees/payments/check-transaction-status';
 
-  // Resource Center
-  static final String getResourceCenter = baseUrl + 'resource-center';
+  // ---------------- Timetable (GETTERS) ----------------
+  static String get getStudentTimetable => '${baseUrl}timetable/student';
+  static String get getTeacherTimetable => '${baseUrl}timetable/teacher';
 
-  // Homework
-  static final String getStudentHomeWork = baseUrl + 'homework';
+  // ---------------- Attendance (GETTERS) ----------------
+  static String get getStudentAttendance => '${baseUrl}attendance/student';
 
-  // Notice Board
-  static final String getNotices = baseUrl + 'notice-board';
+  // ---------------- Resource Center (GETTERS) ----------------
+  static String get getResourceCenter => '${baseUrl}resource-center';
 
-  // Calendar
-  static final String getCalendar = baseUrl + 'calendar';
+  // ---------------- Homework (GETTERS) ----------------
+  static String get getStudentHomeWork => '${baseUrl}homework';
+  static String get getStudentHomeWorkSubmissions => '${baseUrl}homework-submissions/:homeworkId';
+  static String get submitStudentHomeWork => '${baseUrl}homeworks/submit/:homeworkId';
 
-  // Notifications
-  static final String getNotifications = baseUrl + 'notifications';
-  static final String sendNotificationTokens = baseUrl + 'notifications/device-tokens/send';
+  // ---------------- Notice Board (GETTERS) ----------------
+  static String get getNotices => '${baseUrl}notice-board';
 
-  // Examination
-  static final String getStudentPerformance = baseUrl + 'exams/student-exam-performance';
-  static final String getStudentExamTrend = baseUrl + 'exams/student-exam-trend';
-  static final String getStudentExamReport = baseUrl + 'exams/reports/:student_id';
+  // ---------------- Calendar (GETTERS) ----------------
+  static String get getCalendar => '${baseUrl}calendar';
 
-  // Academic Sessions
-  static final String getAllAcademicSessionsByBranch = baseUrl + 'academic-sessions/:branch_id/branch';
-  static final String getStudentAcademicSessions = baseUrl + 'academic-sessions/:student_id/student';
+  // ---------------- Notifications (GETTERS) ----------------
+  static String get getNotifications => '${baseUrl}notifications';
+  static String get sendNotificationTokens => '${baseUrl}notifications/device-tokens/send';
 
-  static final String getHash = baseUrl + 'auth/mobile/global/hash/login';
+  // ---------------- Examination (GETTERS) ----------------
+  static String get getStudentPerformance => '${baseUrl}exams/student-exam-performance';
+  static String get getStudentExamTrend => '${baseUrl}exams/student-exam-trend';
+  static String get getStudentExamReport => '${baseUrl}exams/reports/:student_id';
+
+  // ---------------- Academic Sessions (GETTERS) ----------------
+  static String get getAllAcademicSessionsByBranch => '${baseUrl}academic-sessions/:branch_id/branch';
+  static String get getStudentAcademicSessions => '${baseUrl}academic-sessions/:student_id/student';
+
+static final String getHash = baseUrl + 'auth/mobile/global/hash/login';
   static final String faceIdLogin = baseUrl + 'auth/mobile/global/login';
   static final String multiAccountLogin =
       baseUrl + 'auth/multi-account/mobile/login';
@@ -161,21 +178,17 @@ class KiotaPayConstants {
   static final String deleteFavorites = baseUrl + 'favourites/delete';
   static final String loadDetails =
       baseUrl + 'organisation/company/load-details';
-  static final String mpesaStkPush = baseUrl + 'collection/wallet-load/push';
-  static final String publicKey = '''
------BEGIN PUBLIC KEY-----
-MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEArqIC0DZPS/zPQQ2dH984
-D707jnkQrnNEF+Ac4k/BleoNeVdnDVuYMBGCIV2mvENUmy+bpQPmoMmgEAmNXOeY
-ntR+QB5rlkkl7+5OMHKb1LmJWDm9U3koEcMCQ7TPqAaQucvjkDSIEGfJIXYbyq2D
-BLzJVDcuNqUxzZIyLCqoAFiqhslB/NLpJR0VK32MF+Mwmu1GXjwbT9ZnXzQO4BjW
-NX6w3bK6JPBdA8PDi9zf1klNEvMQUVpy8uicMiIZH7/0RlqCIPPberZqvyFDH/i5
-Y2I4AYmQRiSsqbMcRvxD1yPkkodVXNTPBm/kpm8xcDUKLXANcDoQgBI0Lc4uXjb1
-KzUP4EwGPxSPiiAimpfxTo7Z/KzbQASvkO+YBGQ2vXuC4s23aKGVtA7cV6RRhF12
-Ywapjbh+awlGbPpH+sjOkNc0U22whAHZv89qEftMg6Ypv1g4FyW4daKkWUbTrF6O
-FKDKJy0scn/0jztnitPOlNS6nbkF8GVtQil/1U5+SK1MXr8OD1S69y0fiQ2O+J8g
-bk9QLLks38CGgxq1TQQv+UNpsectVyHnHKeWZW8feg/IrqBmlAQB7ZByLpb5q/ld
-s5H1xJMThiqowGt0jY8+zw25X/Ki/8Bq2lxDxMkwB85hRlTdKhcXeWseyWOmZzFp
-xDyHoe0bfK9Z9VxuOEqfzEkCAwEAAQ==
------END PUBLIC KEY-----
-  ''';
+
+  // ---------------- Country helpers ----------------
+  static Future<void> setCountry(String code) async {
+    final url = AppEnv.baseUrls[code] ?? AppEnv.baseUrls[AppEnv.defaultCountry]!;
+    baseUrl = url;
+    await _secure.write(key: AppEnv.storageKeyCountry, value: code);
+  }
+
+  static Future<void> ensureCountryLoaded() async {
+    final saved = await _secure.read(key: AppEnv.storageKeyCountry);
+    final code = saved ?? AppEnv.defaultCountry;
+    baseUrl = AppEnv.baseUrls[code] ?? AppEnv.baseUrls[AppEnv.defaultCountry]!;
+  }
 }

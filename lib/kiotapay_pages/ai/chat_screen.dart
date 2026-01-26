@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:kiotapay/globalclass/chanzo_color.dart';
 import 'package:kiotapay/globalclass/global_methods.dart';
+import 'package:kiotapay/globalclass/kiotapay_constants.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import 'chat_drawer.dart';
@@ -59,7 +60,7 @@ class _ChatPageScreenState extends State<ChatPageScreen> {
     final search = _searchController.text.trim();
 
     final uri = Uri.parse(
-            "https://ai.chanzo.co.ke/users/${authController.userId.toString()}/sessions?limit=10")
+            "${KiotaPayConstants.fetchSessions}/${authController.userId.toString()}/sessions?limit=10")
         .replace(queryParameters: {
       'page': currentPage.toString(),
       if (search.isNotEmpty) 'q': search,
@@ -68,6 +69,7 @@ class _ChatPageScreenState extends State<ChatPageScreen> {
     final client = HttpClient();
     final request = await client.getUrl(uri);
     final response = await request.close();
+    print("sessionUrl is $uri");
 
     if (response.statusCode == 200) {
       final body = await response.transform(utf8.decoder).join();
@@ -88,10 +90,12 @@ class _ChatPageScreenState extends State<ChatPageScreen> {
       showWelcome = false;
     });
     final uri =
-        Uri.parse("https://ai.chanzo.co.ke/sessions/$sessionId/history");
+        Uri.parse("${KiotaPayConstants.loadMessagesFromSession}/$sessionId/history");
     final client = HttpClient();
     final request = await client.getUrl(uri);
     final response = await request.close();
+
+    print("loadMessagesFromSession is $uri");
 
     if (response.statusCode == 200) {
       final responseBody = await response.transform(utf8.decoder).join();
@@ -163,8 +167,10 @@ class _ChatPageScreenState extends State<ChatPageScreen> {
 
     try {
       final client = HttpClient();
-      final uri = Uri.parse("https://ai.chanzo.co.ke/chat");
+      final uri = Uri.parse("${KiotaPayConstants.sendMessage}");
       final requestBody = utf8.encode(jsonEncode(request));
+      print("Chat URL is $uri");
+      print("Chat Body is $request");
 
       final req = await client.postUrl(uri);
       req.headers.set('Content-Type', 'application/json');
@@ -190,14 +196,13 @@ class _ChatPageScreenState extends State<ChatPageScreen> {
                 if (jsonLine["node"] == "agent" && jsonLine["data"] != null) {
                   streamedText += jsonLine["data"];
                   setState(() {
-                    isThinking = false;
+                    // isThinking = false;
                     if (isFirstChunk) {
                       messages.add({
                         "type": "ai",
                         "content": streamedText,
                         "isMarkdown": true,
                         "timestamp": DateTime.now().toIso8601String(),
-                        // Ensure consistent format
                       });
                       isFirstChunk = false;
                     } else {
@@ -469,12 +474,14 @@ class _ChatPageScreenState extends State<ChatPageScreen> {
                       itemCount: sortedMessages.length + (isThinking ? 1 : 0),
                       itemBuilder: (context, index) {
                         messages.sort((a, b) {
-                          final aTime =
-                              DateTime.tryParse(a['timestamp'] ?? '') ??
-                                  DateTime.now();
-                          final bTime =
-                              DateTime.tryParse(b['timestamp'] ?? '') ??
-                                  DateTime.now();
+                          final aTime = a['timestamp'] is DateTime
+                              ? a['timestamp']
+                              : DateTime.tryParse(a['timestamp']?.toString() ?? '') ?? DateTime.now();
+
+                          final bTime = b['timestamp'] is DateTime
+                              ? b['timestamp']
+                              : DateTime.tryParse(b['timestamp']?.toString() ?? '') ?? DateTime.now();
+
                           return aTime.compareTo(bTime);
                         });
 

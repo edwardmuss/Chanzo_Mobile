@@ -47,7 +47,7 @@ class _PaymentConfirmScreenState extends State<PaymentConfirmScreen> {
     required int amount,
     required String phone,
   }) async {
-    final Uri paymentUrl = Uri.parse(KiotaPayConstants.kcbStkPush);
+    final Uri paymentUrl = widget.method == 'kcb' ? Uri.parse(KiotaPayConstants.kcbStkPush) : Uri.parse(KiotaPayConstants.mpesaPaybillStkPush);
     final Uri statusUrl = Uri.parse(KiotaPayConstants.stkPushStatus);
 
     final payload = {

@@ -5,6 +5,7 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   file_selector_linux
   flutter_secure_storage_linux
+  in_app_idle_detector
   nb_utils
   open_file_linux
   rive_common
