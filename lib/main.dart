@@ -34,9 +34,9 @@ Future<void> main() async {
   final userId = prefs.getString('uuid');
 
   // Initialize Firebase
-  await Firebase.initializeApp(
-      // options: DefaultFirebaseOptions.currentPlatform,
-      );
+  // await Firebase.initializeApp(
+  //     // options: DefaultFirebaseOptions.currentPlatform,
+  //     );
 
   // Initialize notifications
   // await NotificationService.initialize();
