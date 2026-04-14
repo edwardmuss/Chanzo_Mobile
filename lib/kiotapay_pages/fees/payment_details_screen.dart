@@ -5,7 +5,7 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:kiotapay/globalclass/chanzo_color.dart';
+import 'package:chanzo/globalclass/chanzo_color.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:path_provider/path_provider.dart';
 

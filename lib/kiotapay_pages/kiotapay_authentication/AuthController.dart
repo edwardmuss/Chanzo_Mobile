@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
-import 'package:kiotapay/globalclass/kiotapay_constants.dart';
+import 'package:chanzo/globalclass/kiotapay_constants.dart';
 import 'package:http/http.dart' as http;
 
 import '../../globalclass/kiotapay_icons.dart';
@@ -293,7 +293,7 @@ class AuthController extends GetxController {
       "${selectedStudent['user']?['first_name'] ?? ''} ${selectedStudent['user']?['last_name'] ?? ''}"
           .trim();
 
-  int get selectedStudentId => selectedStudent['id'];
+  int get selectedStudentId => selectedStudent['id'] ?? 0;
 
   String get selectedStudentAdmissionNumber =>
       "${selectedStudent['admission_no'] ?? ''}";
@@ -304,9 +304,9 @@ class AuthController extends GetxController {
   String get selectedStudentStreamName =>
       "${selectedStudent['stream']?['name'] ?? 'N/A'}";
 
-  int get selectedStudentClassId => selectedStudent['class_id'];
+  int get selectedStudentClassId => selectedStudent['class_id'] ?? 0;
 
-  int get selectedStudentStreamId => selectedStudent['stream_id'];
+  int get selectedStudentStreamId => selectedStudent['stream_id'] ?? 0;
 
   String get selectedStudentAvatar {
     final avatar = selectedStudent['user']?['avatar']?.toString();

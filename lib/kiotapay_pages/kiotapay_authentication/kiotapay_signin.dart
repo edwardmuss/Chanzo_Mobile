@@ -1,30 +1,23 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:developer';
 import 'dart:io' show Platform;
 
 import 'package:awesome_dialog/awesome_dialog.dart';
-import 'package:bootstrap_icons/bootstrap_icons.dart';
-import 'package:crypto/crypto.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_initicon/flutter_initicon.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
-import 'package:kiotapay/globalclass/global_methods.dart';
-import 'package:kiotapay/globalclass/biometric_auth.dart';
-import 'package:kiotapay/globalclass/chanzo_color.dart';
-import 'package:kiotapay/globalclass/kiotapay_constants.dart';
-import 'package:kiotapay/globalclass/kiotapay_fontstyle.dart';
-import 'package:kiotapay/globalclass/kiotapay_global_classes.dart';
-import 'package:kiotapay/globalclass/kiotapay_icons.dart';
-import 'package:kiotapay/kiotapay_pages/kiotapay_authentication/kiotapay_pincode.dart';
-import 'package:kiotapay/kiotapay_pages/kiotapay_authentication/kiotapay_reset_password_email.dart';
-import 'package:kiotapay/kiotapay_pages/kiotapay_authentication/kiotapay_verify_code.dart';
-import 'package:kiotapay/kiotapay_pages/kiotapay_dahsboard/kiotapay_dahsboard.dart';
-import 'package:kiotapay/kiotapay_theme/kiotapay_themecontroller.dart';
+import 'package:chanzo/globalclass/global_methods.dart';
+import 'package:chanzo/globalclass/biometric_auth.dart';
+import 'package:chanzo/globalclass/chanzo_color.dart';
+import 'package:chanzo/globalclass/kiotapay_constants.dart';
+import 'package:chanzo/globalclass/kiotapay_fontstyle.dart';
+import 'package:chanzo/globalclass/kiotapay_global_classes.dart';
+import 'package:chanzo/globalclass/kiotapay_icons.dart';
+import 'package:chanzo/kiotapay_pages/kiotapay_authentication/kiotapay_reset_password_email.dart';
+import 'package:chanzo/kiotapay_pages/kiotapay_dahsboard/kiotapay_dahsboard.dart';
+import 'package:chanzo/kiotapay_theme/kiotapay_themecontroller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:kiotapay/models/user_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -34,7 +27,6 @@ import '../../globalclass/choose_student_page.dart';
 import 'AuthController.dart';
 import 'BranchContext.dart';
 import 'SelectBranchPage.dart';
-import 'change_password_new_user.dart';
 
 class KiotaPaySignIn extends StatefulWidget {
   const KiotaPaySignIn({super.key});
@@ -57,9 +49,7 @@ class _KiotaPaySignInState extends State<KiotaPaySignIn> {
   bool _obscureText = true;
   bool _isLoading = false;
   bool _rememberMe = false;
-  String? _token;
   Map<String, dynamic>? _userData;
-  List<dynamic> _accounts = [];
   final _secure = const FlutterSecureStorage();
   String? _selectedCountry; // 'KE', 'TZ', etc.
 
@@ -72,7 +62,7 @@ class _KiotaPaySignInState extends State<KiotaPaySignIn> {
   @override
   void initState() {
     super.initState();
-    checkForUpdate();
+    checkAppUpdate();
     getBiometricSwitchState();
     // getUserData();
     isLoginedIn();
@@ -86,6 +76,10 @@ class _KiotaPaySignInState extends State<KiotaPaySignIn> {
     super.dispose();
     usernameController.dispose();
     passwordController.dispose();
+  }
+
+  Future<void> checkAppUpdate() async {
+    await checkForUpdate(context);
   }
 
   Future<void> _loadCountry() async {
@@ -156,82 +150,6 @@ class _KiotaPaySignInState extends State<KiotaPaySignIn> {
     if (!isConnected) {
       showSnackBar(context, "No internet connection", Colors.red, 2.00, 2, 5);
       return;
-    }
-  }
-
-  Future<void> checkForUpdate() async {
-    final String installedVersion = await getInstalledVersion();
-    final String latestVersion = await fetchLatestVersion();
-
-    if (_compareVersions(installedVersion, latestVersion) < 0) {
-      // _showUpdateDialog();
-    }
-  }
-
-  Future<String> getInstalledVersion() async {
-    final PackageInfo packageInfo = await PackageInfo.fromPlatform();
-    return packageInfo.version;
-  }
-
-  Future<String> fetchLatestVersion() async {
-    final response = await http
-        .get(Uri.parse('https://cloudrebue.co.ke/latest_version.txt'));
-    if (response.statusCode == 200) {
-      return response.body.trim();
-    } else {
-      throw Exception('Failed to fetch version info');
-    }
-  }
-
-  int _compareVersions(String v1, String v2) {
-    final List<int> version1 = v1.split('.').map(int.parse).toList();
-    final List<int> version2 = v2.split('.').map(int.parse).toList();
-
-    for (int i = 0; i < version1.length; i++) {
-      if (i >= version2.length) return 1;
-      if (version1[i] < version2[i]) return -1;
-      if (version1[i] > version2[i]) return 1;
-    }
-    return 0;
-  }
-
-  void _showUpdateDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: true, // Make dialog undismissible by tapping outside
-      builder: (BuildContext context) {
-        return WillPopScope(
-          onWillPop: () async => false, // Prevent back button dismissal
-          child: AlertDialog(
-            title: Text('Update Available'),
-            content: Text(
-                'A new version of the app is available. Please update to the latest version.'),
-            actions: <Widget>[
-              TextButton(
-                child: Text('Update'),
-                onPressed: () {
-                  // Open the appropriate store page
-                  if (Platform.isAndroid) {
-                    _launchURL(
-                        'https://play.google.com/store/apps/details?id=com.chanzo.app');
-                  } else if (Platform.isIOS) {
-                    _launchURL('https://apps.apple.com/app/id6504042142');
-                  }
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  void _launchURL(String url) async {
-    final Uri uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    } else {
-      throw 'Could not launch $url';
     }
   }
 
@@ -377,6 +295,18 @@ class _KiotaPaySignInState extends State<KiotaPaySignIn> {
       final currentCtxRaw = data['current_context'];
       if (action == 'skip' && currentCtxRaw != null) {
         authController.activeContext.value = ActiveContext.fromJson(asMap(currentCtxRaw));
+      } else if (action == 'skip') {
+        // Auto-set active context if user only has 1 branch and 1 role!
+        if (authController.availableContexts.length == 1 &&
+            authController.availableContexts.first.roles.length == 1) {
+
+          final b = authController.availableContexts.first;
+          authController.activeContext.value = ActiveContext(
+            branchId: b.branchId,
+            role: b.roles.first,
+            branchName: b.branchName,
+          );
+        }
       }
 
       // Biometric (optional)

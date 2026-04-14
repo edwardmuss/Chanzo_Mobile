@@ -2,12 +2,12 @@ import 'dart:convert';
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
-import 'package:kiotapay/globalclass/global_methods.dart';
-import 'package:kiotapay/globalclass/chanzo_color.dart';
-import 'package:kiotapay/globalclass/kiotapay_fontstyle.dart';
-import 'package:kiotapay/globalclass/kiotapay_global_classes.dart';
-import 'package:kiotapay/globalclass/kiotapay_icons.dart';
-import 'package:kiotapay/kiotapay_theme/kiotapay_themecontroller.dart';
+import 'package:chanzo/globalclass/global_methods.dart';
+import 'package:chanzo/globalclass/chanzo_color.dart';
+import 'package:chanzo/globalclass/kiotapay_fontstyle.dart';
+import 'package:chanzo/globalclass/kiotapay_global_classes.dart';
+import 'package:chanzo/globalclass/kiotapay_icons.dart';
+import 'package:chanzo/kiotapay_theme/kiotapay_themecontroller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;

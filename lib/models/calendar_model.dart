@@ -25,15 +25,15 @@ class CalendarEvent {
 
   factory CalendarEvent.fromJson(Map<String, dynamic> json) {
     return CalendarEvent(
-      id: json['id'],
-      title: json['title'],
-      category: json['category'],
-      eventDate: json['event_date'],
-      eventEndDate: json['event_end_date'],
-      startTime: json['start_time'],
-      endTime: json['end_time'],
-      location: json['location'],
-      description: json['description'],
+      id: json['id'] ?? 0,
+      title: json['title'] ?? 'No Title',
+      category: json['category'] ?? 'default',
+      eventDate: json['event_date'] ?? '',
+      eventEndDate: json['event_end_date'] ?? '',
+      startTime: json['start_time'] ?? '',
+      endTime: json['end_time'] ?? '',
+      location: json['location'] ?? '',
+      description: json['description'] ?? '',
     );
   }
 

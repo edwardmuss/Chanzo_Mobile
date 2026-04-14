@@ -1,8 +1,8 @@
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:kiotapay/globalclass/kiotapay_global_classes.dart';
-import 'package:kiotapay/kiotapay_pages/Examination/student_analytics.dart';
+import 'package:chanzo/globalclass/kiotapay_global_classes.dart';
+import 'package:chanzo/kiotapay_pages/Examination/student_analytics.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../globalclass/chanzo_color.dart';

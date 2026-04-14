@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import 'package:kiotapay/globalclass/chanzo_color.dart';
+import 'package:chanzo/globalclass/chanzo_color.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../../globalclass/global_methods.dart';
@@ -14,13 +14,20 @@ import '../../utils/dio_helper.dart';
 import '../../widgets/error.dart';
 
 class TimetableScreen extends StatefulWidget {
-  final int classId;
+  final int? classId;
   final int? streamId;
+  final String? className;
+  final String? streamName;
+  final bool isTeacherTimetable;
 
   const TimetableScreen({
     super.key,
-    required this.classId,
+    this.classId,
     this.streamId,
+    this.className,
+    this.streamName,
+    this.isTeacherTimetable = false,
+
   });
 
   @override
@@ -34,30 +41,48 @@ class _TimetableScreenState extends State<TimetableScreen>
 
   final timeFormatter = DateFormat.jm(); // Formats to h:mm a
 
+  // Define Permissions
+  late final bool canAdd;
+  late final bool canEdit;
+  late final bool canDelete;
+
   @override
   void initState() {
     super.initState();
-    timetableFuture = fetchTimetable(widget.classId, widget.streamId!);
+    // Initialize permissions once to save performance
+    canAdd = authController.hasPermission('class_timetable-add');
+    canEdit = authController.hasPermission('class_timetable-edit');
+    canDelete = authController.hasPermission('class_timetable-delete');
+
+    timetableFuture = fetchTimetable();
   }
 
-  Future<Map<String, dynamic>> fetchTimetable(int classId, int streamId) async {
+  Future<Map<String, dynamic>> fetchTimetable() async {
     try {
-      // Use DioHelper to send GET request
+      // 1. Determine Endpoint based on the flag
+      final endpoint = widget.isTeacherTimetable
+          ? KiotaPayConstants.getTeacherTimetable // Define this in your constants!
+          : KiotaPayConstants.getStudentTimetable;
+
+      // 2. Determine Query Parameters
+      final queryParams = widget.isTeacherTimetable
+          ? null // Teacher's endpoint usually relies on Auth Bearer token, no params needed
+          : {
+        'class_id': widget.classId,
+        'stream_id': widget.streamId,
+      };
+
       final response = await DioHelper().get(
-        KiotaPayConstants.getStudentTimetable,
-        queryParameters: {
-          'class_id': classId,
-          'stream_id': streamId,
-        },
+        endpoint,
+        queryParameters: queryParams,
       );
 
       if (response.statusCode == 200) {
-        final data = response.data['data'];
-        return data;
+        return response.data['data'];
       } else {
         throw Exception("Failed to fetch timetable: ${response.statusCode}");
       }
-    } on DioError catch (e) {
+    } on DioException catch (e) {
       debugPrint("❌ DioError: ${e.message}");
       throw Exception("Failed to fetch timetable: ${e.response?.data['message'] ?? e.message}");
     } catch (e) {
@@ -68,7 +93,7 @@ class _TimetableScreenState extends State<TimetableScreen>
 
   Future<void> _refreshData() async {
     setState(() {
-      timetableFuture = fetchTimetable(widget.classId, widget.streamId!);
+      timetableFuture = fetchTimetable();
     });
     await timetableFuture; // ensure data is refreshed
   }
@@ -92,10 +117,22 @@ class _TimetableScreenState extends State<TimetableScreen>
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          "${authController.selectedStudent['class']?['name']} "
-              "(${authController.selectedStudent['stream']?['name']}) Timetable",
+          widget.isTeacherTimetable
+              ? "My Timetable"
+              : "${(authController.selectedStudent['class']?['name'] ?? widget.className ?? 'Class')} "
+              "(${(authController.selectedStudent['stream']?['name'] ?? widget.streamName ?? 'Stream')})",
         ),
       ),
+      floatingActionButton: canAdd
+          ? FloatingActionButton.extended(
+        onPressed: () {
+          // TODO: Open Add Timetable Slot BottomSheet/Screen
+        },
+        backgroundColor: ChanzoColors.primary,
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text("Add Slot", style: TextStyle(color: Colors.white)),
+      )
+          : null,
       body: FutureBuilder<Map<String, dynamic>>(
         future: timetableFuture,
         builder: (context, snapshot) {
@@ -177,6 +214,7 @@ class _TimetableScreenState extends State<TimetableScreen>
 
                       return ListView.builder(
                         itemCount: daySlotKeys.length,
+                        padding: const EdgeInsets.only(bottom: 80),
                         itemBuilder: (context, index) {
                           final slotKey = daySlotKeys[index];
                           final slotTimes = slotKey.split('-');
@@ -296,18 +334,12 @@ class _TimetableScreenState extends State<TimetableScreen>
               children: [
                 Text(
                   formattedFrom,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   formattedTo,
-                  style: TextStyle(
-                    color: Colors.grey[500],
-                    fontSize: 13,
-                  ),
+                  style: TextStyle(color: Colors.grey[500], fontSize: 13),
                 ),
               ],
             ),
@@ -321,9 +353,7 @@ class _TimetableScreenState extends State<TimetableScreen>
                 boxShadow: [
                   BoxShadow(
                     color: Colors.grey.withOpacity(0.1),
-                    spreadRadius: 2,
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
+                    spreadRadius: 2, blurRadius: 4, offset: const Offset(0, 2),
                   ),
                 ],
               ),
@@ -332,52 +362,106 @@ class _TimetableScreenState extends State<TimetableScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: entries.map((entry) {
                   final isBreak = entry['break_name'] != null && entry['break_name'] != "";
-                  final subject = isBreak
-                      ? entry['break_name']
-                      : entry['subject_name'] ?? "Unknown Subject";
+                  final subject = isBreak ? entry['break_name'] : entry['subject_name'] ?? "Unknown Subject";
                   final teacher = entry['teacher_name'];
                   final room = entry['room_number'] ?? "";
 
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 6),
-                    child: Column(
+                    child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          subject,
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: isActive ? Colors.white : Colors.grey[800],
+                        // Details Column
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                subject,
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: isActive ? Colors.white : Colors.grey[800],
+                                ),
+                              ),
+                              if (!isBreak && teacher != null && teacher != "")
+                                Row(
+                                  children: [
+                                    Icon(Icons.person, size: 14, color: isActive ? Colors.white70 : Colors.grey[500]),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      teacher,
+                                      style: TextStyle(
+                                        color: isActive ? Colors.white70 : Colors.grey[600],
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              if (room.isNotEmpty)
+                                Row(
+                                  children: [
+                                    Icon(Icons.room, size: 14, color: isActive ? Colors.white70 : Colors.grey[500]),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      room,
+                                      style: TextStyle(
+                                        color: isActive ? Colors.white70 : Colors.grey[600],
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                            ],
                           ),
                         ),
-                        if (!isBreak && teacher != null && teacher != "")
-                          Row(
-                            children: [
-                              Icon(Icons.person, size: 14, color: isActive ? Colors.white70 : Colors.grey[500]),
-                              const SizedBox(width: 4),
-                              Text(
-                                teacher,
-                                style: TextStyle(
-                                  color: isActive ? Colors.white70 : Colors.grey[600],
-                                  fontSize: 13,
-                                ),
+
+                        // --- EDIT / DELETE PERMISSION: Popup Menu ---
+                        if (!isBreak && (canEdit || canDelete))
+                          SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: PopupMenuButton<String>(
+                              padding: EdgeInsets.zero,
+                              icon: Icon(
+                                  Icons.more_vert,
+                                  size: 20,
+                                  color: isActive ? Colors.white : Colors.grey.shade600
                               ),
-                            ],
-                          ),
-                        if (room.isNotEmpty)
-                          Row(
-                            children: [
-                              Icon(Icons.room, size: 14, color: isActive ? Colors.white70 : Colors.grey[500]),
-                              const SizedBox(width: 4),
-                              Text(
-                                room,
-                                style: TextStyle(
-                                  color: isActive ? Colors.white70 : Colors.grey[600],
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ],
+                              onSelected: (value) {
+                                if (value == 'edit') {
+                                  // TODO: Open Edit Screen/Modal for this specific entry
+                                  print("Edit slot: ${entry['id']}");
+                                } else if (value == 'delete') {
+                                  // TODO: Trigger Delete API logic
+                                  print("Delete slot: ${entry['id']}");
+                                }
+                              },
+                              itemBuilder: (context) => [
+                                if (canEdit)
+                                  const PopupMenuItem(
+                                    value: 'edit',
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.edit, size: 18),
+                                        SizedBox(width: 8),
+                                        Text('Edit Slot'),
+                                      ],
+                                    ),
+                                  ),
+                                if (canDelete)
+                                  const PopupMenuItem(
+                                    value: 'delete',
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.delete, size: 18, color: Colors.red),
+                                        SizedBox(width: 8),
+                                        Text('Delete Slot', style: TextStyle(color: Colors.red)),
+                                      ],
+                                    ),
+                                  ),
+                              ],
+                            ),
                           ),
                       ],
                     ),

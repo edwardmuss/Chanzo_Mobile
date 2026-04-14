@@ -4,9 +4,9 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
-import 'package:kiotapay/globalclass/chanzo_color.dart';
-import 'package:kiotapay/globalclass/global_methods.dart';
-import 'package:kiotapay/globalclass/kiotapay_constants.dart';
+import 'package:chanzo/globalclass/chanzo_color.dart';
+import 'package:chanzo/globalclass/global_methods.dart';
+import 'package:chanzo/globalclass/kiotapay_constants.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import 'chat_drawer.dart';

@@ -5,9 +5,9 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
-import 'package:kiotapay/globalclass/global_methods.dart';
-import 'package:kiotapay/kiotapay_pages/Examination/student_performance_trend_model.dart';
-import 'package:kiotapay/utils/dio_helper.dart';
+import 'package:chanzo/globalclass/global_methods.dart';
+import 'package:chanzo/kiotapay_pages/Examination/student_performance_trend_model.dart';
+import 'package:chanzo/utils/dio_helper.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../globalclass/kiotapay_constants.dart';
 import '../../utils/pdf_viewer_screen.dart';
@@ -71,7 +71,7 @@ class PerformanceController extends GetxController {
         Get.snackbar('Error', response.data['message'] ?? 'Failed to load performance data');
       }
     } catch (e) {
-      Get.snackbar('Error', "Error loading performance");
+      // Get.snackbar('Error', "Error loading performance");
       print("❌ loadPerformance Error: $e");
     } finally {
       isLoading.value = false;
@@ -119,7 +119,7 @@ class PerformanceController extends GetxController {
         Get.snackbar('Error', response.data['message'] ?? 'Failed to load performance data');
       }
     } catch (e) {
-      Get.snackbar('Error', "Error loading performance trend");
+      // Get.snackbar('Error', "Error loading performance trend");
       print("❌ loadStudentExamTrend Error: $e");
     } finally {
       isLoading.value = false;

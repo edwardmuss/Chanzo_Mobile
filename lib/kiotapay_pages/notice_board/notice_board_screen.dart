@@ -46,7 +46,14 @@ class _NoticesScreenState extends State<NoticesScreen> {
       notices.clear();
     }
 
-    setState(() => refresh ? isLoading = true : isLoadingMore = true);
+    // --- Show main loader on refresh OR initial load ---
+    setState(() {
+      if (refresh || notices.isEmpty) {
+        isLoading = true;
+      } else {
+        isLoadingMore = true;
+      }
+    });
 
     try {
       final response = await DioHelper().get(

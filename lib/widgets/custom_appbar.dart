@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:bootstrap_icons/bootstrap_icons.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:get/get.dart';
-import 'package:kiotapay/globalclass/chanzo_color.dart';
-import 'package:kiotapay/globalclass/kiotapay_fontstyle.dart';
-import 'package:kiotapay/globalclass/kiotapay_global_classes.dart';
-import 'package:kiotapay/kiotapay_pages/notifications/notification_screen.dart';
+import 'package:chanzo/globalclass/chanzo_color.dart';
+import 'package:chanzo/globalclass/kiotapay_fontstyle.dart';
+import 'package:chanzo/globalclass/kiotapay_global_classes.dart';
+import 'package:chanzo/kiotapay_pages/notifications/notification_screen.dart';
 import 'package:provider/provider.dart';
 
 import '../globalclass/kiotapay_constants.dart';

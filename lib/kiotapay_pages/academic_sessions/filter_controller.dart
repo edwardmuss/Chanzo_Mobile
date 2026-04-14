@@ -1,5 +1,5 @@
 import 'package:get/get.dart';
-import 'package:kiotapay/utils/dio_helper.dart';
+import 'package:chanzo/utils/dio_helper.dart';
 import '../../globalclass/kiotapay_constants.dart';
 import 'student_academic_session_model.dart';
 

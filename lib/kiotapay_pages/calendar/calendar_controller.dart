@@ -1,7 +1,9 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:kiotapay/globalclass/kiotapay_constants.dart';
+import 'package:chanzo/globalclass/kiotapay_constants.dart';
 import 'package:table_calendar/table_calendar.dart';
+import '../../globalclass/chanzo_color.dart';
 import '../../models/calendar_model.dart';
 import '../../utils/dio_helper.dart';
 
@@ -132,39 +134,86 @@ class CalendarController extends GetxController {
         },
       );
 
-      if (response.statusCode == 200) {
-        final data = response.data['data'] as List;
+      // --- Handle 2xx Success ---
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final responseData = response.data;
+
+        final data = responseData['data'] as List;
         final newEvents = data.map((e) => CalendarEvent.fromJson(e)).toList();
 
         if (newEvents.length < perPage) hasMore.value = false;
 
         if (refresh) {
           events.value = newEvents;
+          eventsByDay.clear();
         } else {
           events.addAll(newEvents);
         }
 
-        // Clear and rebuild eventsByDay when refreshing
-        if (refresh) {
-          eventsByDay.clear();
-        }
-
+        // Map events safely to the Calendar
         for (var event in newEvents) {
-          final start = DateTime.parse(event.eventDate).toLocal();
-          final end = DateTime.parse(event.eventEndDate).toLocal();
-          for (int i = 0; i <= end.difference(start).inDays; i++) {
-            final day = DateTime(start.year, start.month, start.day + i);
-            final normalized = DateTime(day.year, day.month, day.day);
-            eventsByDay.update(
-              normalized,
-                  (existing) => existing..add(event),
-              ifAbsent: () => [event],
-            );
+          try {
+            final startDateStr = event.eventDate;
+            final endDateStr = (event.eventEndDate == null || event.eventEndDate.toString().isEmpty)
+                ? startDateStr
+                : event.eventEndDate;
+
+            final start = DateTime.parse(startDateStr.toString());
+            final end = DateTime.parse(endDateStr.toString());
+
+            for (int i = 0; i <= end.difference(start).inDays; i++) {
+              final normalized = DateTime.utc(start.year, start.month, start.day + i);
+
+              eventsByDay.update(
+                normalized,
+                    (existing) {
+                  if (!existing.any((e) => e.id == event.id)) {
+                    existing.add(event);
+                  }
+                  return existing;
+                },
+                ifAbsent: () => [event],
+              );
+            }
+          } catch (e) {
+            print('Error parsing dates for event ${event.id}: $e');
           }
         }
       }
+
+      // --- Catch Dio Non-2xx Errors (403, 400, 404, 500) ---
+    } on DioException catch (e) {
+      hasMore.value = false; // Stop pagination on error
+      String errorMessage = 'A network error occurred.';
+
+      // Check if the server sent a response body
+      if (e.response != null && e.response?.data != null) {
+        final errorData = e.response?.data;
+
+        // Extract your custom message from the JSON
+        if (errorData is Map && errorData['message'] != null) {
+          errorMessage = errorData['message'];
+        }
+      }
+
+      Get.snackbar(
+        'Notice',
+        errorMessage,
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: ChanzoColors.secondary,
+        colorText: Colors.white,
+      );
+      print('Dio API Error: ${e.response?.statusCode} - $errorMessage');
+
+      // --- Catch general Dart errors (e.g., parsing/JSON errors) ---
     } catch (e) {
-      print('Error fetching events: $e');
+      hasMore.value = false;
+      print('General Error fetching events: $e');
+      Get.snackbar(
+        'Error',
+        'An unexpected error occurred processing the calendar.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     } finally {
       isLoading(false);
     }

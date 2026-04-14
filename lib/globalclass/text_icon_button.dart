@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:kiotapay/globalclass/chanzo_color.dart';
-import 'package:kiotapay/globalclass/kiotapay_fontstyle.dart';
+import 'package:chanzo/globalclass/chanzo_color.dart';
+import 'package:chanzo/globalclass/kiotapay_fontstyle.dart';
 
 class TextIconButton extends StatelessWidget {
   const TextIconButton({

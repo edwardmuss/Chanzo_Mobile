@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:kiotapay/kiotapay_pages/kiotapay_dahsboard/kiotapay_dahsboard.dart';
+import 'package:chanzo/kiotapay_pages/kiotapay_dahsboard/kiotapay_dahsboard.dart';
 
 import '../kiotapay_pages/kiotapay_authentication/AuthController.dart';
 import 'chanzo_color.dart';

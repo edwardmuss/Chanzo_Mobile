@@ -1,9 +1,9 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:in_app_idle_detector/in_app_idle_detector.dart';
-import 'package:kiotapay/kiotapay_pages/kiotapay_authentication/kiotapay_splash.dart';
-import 'package:kiotapay/kiotapay_theme/kiotapay_theme.dart';
-import 'package:kiotapay/kiotapay_theme/kiotapay_themecontroller.dart';
-import 'package:kiotapay/kiotapay_translation/stringtranslation.dart';
+import 'package:chanzo/kiotapay_pages/kiotapay_authentication/kiotapay_splash.dart';
+import 'package:chanzo/kiotapay_theme/kiotapay_theme.dart';
+import 'package:chanzo/kiotapay_theme/kiotapay_themecontroller.dart';
+import 'package:chanzo/kiotapay_translation/stringtranslation.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../kiotapay_pages/kiotapay_authentication/AuthController.dart';

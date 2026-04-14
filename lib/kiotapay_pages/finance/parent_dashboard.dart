@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:kiotapay/globalclass/chanzo_color.dart';
-import 'package:kiotapay/globalclass/kiotapay_fontstyle.dart';
-import 'package:kiotapay/kiotapay_pages/fees/fee_structure_screen.dart';
-import 'package:kiotapay/kiotapay_theme/kiotapay_themecontroller.dart';
+import 'package:chanzo/globalclass/chanzo_color.dart';
+import 'package:chanzo/globalclass/kiotapay_fontstyle.dart';
+import 'package:chanzo/kiotapay_pages/fees/fee_structure_screen.dart';
+import 'package:chanzo/kiotapay_theme/kiotapay_themecontroller.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:shimmer/shimmer.dart';

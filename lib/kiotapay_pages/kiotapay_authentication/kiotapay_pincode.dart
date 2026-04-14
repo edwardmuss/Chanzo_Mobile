@@ -2,11 +2,11 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:kiotapay/globalclass/chanzo_color.dart';
-import 'package:kiotapay/globalclass/kiotapay_icons.dart';
-import 'package:kiotapay/kiotapay_pages/kiotapay_authentication/kiotapay_pincode_confirm.dart';
+import 'package:chanzo/globalclass/chanzo_color.dart';
+import 'package:chanzo/globalclass/kiotapay_icons.dart';
+import 'package:chanzo/kiotapay_pages/kiotapay_authentication/kiotapay_pincode_confirm.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
-import 'package:kiotapay/kiotapay_pages/kiotapay_authentication/kiotapay_signin.dart';
+import 'package:chanzo/kiotapay_pages/kiotapay_authentication/kiotapay_signin.dart';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
 

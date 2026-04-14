@@ -1,10 +1,14 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import 'package:kiotapay/globalclass/chanzo_color.dart';
-import 'package:kiotapay/globalclass/kiotapay_constants.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:chanzo/globalclass/chanzo_color.dart';
+import 'package:chanzo/globalclass/kiotapay_constants.dart';
+import 'package:awesome_dialog/awesome_dialog.dart';
+import '../../utils/dio_helper.dart';
+import '../kiotapay_authentication/AuthController.dart';
+import 'add_edit_resource_screen.dart';
 
 import '../../globalclass/global_methods.dart';
 
@@ -25,12 +29,19 @@ class _ResourceCenterScreenState extends State<ResourceCenterScreen> {
   bool hasError = false;
   String searchQuery = "";
 
+  late final bool canAdd;
+  late final bool canEdit;
+  late final bool canDelete;
+
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
+    canAdd = authController.hasPermission('resource_center-add');
+    canEdit = authController.hasPermission('resource_center-edit');
+    canDelete = authController.hasPermission('resource_center-delete');
     fetchResources();
     _scrollController.addListener(_scrollListener);
     _searchController.addListener(() {
@@ -39,6 +50,27 @@ class _ResourceCenterScreenState extends State<ResourceCenterScreen> {
         filterResources();
       });
     });
+  }
+
+  void _deleteResource(int id) {
+    AwesomeDialog(
+      context: context,
+      dialogType: DialogType.warning,
+      title: 'Delete Resource?',
+      desc: 'Are you sure you want to delete this resource?',
+      btnCancelOnPress: () {},
+      btnOkOnPress: () async {
+        try {
+          final response = await DioHelper().delete('${KiotaPayConstants.baseUrl}/resources/$id');
+          if (response.statusCode == 200) {
+            fetchResources(refresh: true);
+            Get.snackbar('Success', 'Resource deleted.', backgroundColor: Colors.green, colorText: Colors.white);
+          }
+        } catch (e) {
+          Get.snackbar('Error', 'Failed to delete resource.');
+        }
+      },
+    ).show();
   }
 
   Future<void> fetchResources({bool refresh = false}) async {
@@ -62,7 +94,7 @@ class _ResourceCenterScreenState extends State<ResourceCenterScreen> {
 
       final token = await storage.read(key: 'token');
       final response = await http.get(
-        Uri.parse("${KiotaPayConstants.getResourceCenter}?page=$currentPage"),
+        Uri.parse("${KiotaPayConstants.resourceCenter}?page=$currentPage"),
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
@@ -129,9 +161,19 @@ class _ResourceCenterScreenState extends State<ResourceCenterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Resource Center"),
-      ),
+      appBar: AppBar(title: const Text("Resource Center")),
+      floatingActionButton: canAdd
+          ? FloatingActionButton.extended(
+        onPressed: () {
+          Get.to(() => const AddEditResourceScreen())?.then((res) {
+            if (res == true) fetchResources(refresh: true);
+          });
+        },
+        backgroundColor: ChanzoColors.primary,
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text("Add Resource", style: TextStyle(color: Colors.white)),
+      )
+          : null,
       body: Column(
         children: [
           Padding(
@@ -166,70 +208,105 @@ class _ResourceCenterScreenState extends State<ResourceCenterScreen> {
             )
                 : RefreshIndicator(
               onRefresh: () => fetchResources(refresh: true),
-              child: ListView.builder(
+              // --- FIX: Show Empty State if there are no resources ---
+              child: filteredResources.isEmpty
+                  ? ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: [
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.3),
+                  Center(
+                    child: Column(
+                      children: [
+                        Icon(Icons.folder_off_outlined, size: 64, color: Colors.grey.shade400),
+                        const SizedBox(height: 16),
+                        Text(
+                          "No resources found",
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.grey.shade700),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          "There are no files available for your account.",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.grey.shade500),
+                        ),
+                      ],
+                    ),
+                  )
+                ],
+              )
+                  : ListView.builder(
                 controller: _scrollController,
                 itemCount: filteredResources.length + 1,
                 itemBuilder: (context, index) {
                   if (index < filteredResources.length) {
                     final resource = filteredResources[index];
-                    final uploadDate = DateFormat.yMMMMd().format(
-                        DateTime.parse(resource['upload_date']));
+
+                    // --- FIX: Safely parse dates so it doesn't crash on null ---
+                    final uploadDateStr = resource['upload_date'];
+                    final uploadDate = uploadDateStr != null
+                        ? DateFormat.yMMMMd().format(DateTime.parse(uploadDateStr))
+                        : "Unknown Date";
+
                     final title = resource['title'] ?? "Untitled";
                     final description = resource['description']
-                        ?.replaceAll(RegExp(r'<[^>]*>|&[^;]+;'),
-                        '') ??
-                        "";
+                        ?.replaceAll(RegExp(r'<[^>]*>|&[^;]+;'), '') ?? "";
 
                     return Card(
-                      margin: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
+                      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       elevation: 2,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       child: Padding(
-                        padding: const EdgeInsets.all(12.0),
+                        padding: const EdgeInsets.all(16.0),
                         child: Column(
-                          crossAxisAlignment:
-                          CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              title,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              uploadDate,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey,
-                              ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                      const SizedBox(height: 4),
+                                      Text(uploadDate, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                                    ],
+                                  ),
+                                ),
+                                // --- EDIT/DELETE MENU ---
+                                if (canEdit || canDelete)
+                                  PopupMenuButton<String>(
+                                    icon: const Icon(Icons.more_vert, size: 20),
+                                    padding: EdgeInsets.zero,
+                                    onSelected: (value) {
+                                      if (value == 'edit') {
+                                        Get.to(() => AddEditResourceScreen(resource: resource))?.then((res) {
+                                          if (res == true) fetchResources(refresh: true);
+                                        });
+                                      } else if (value == 'delete') {
+                                        _deleteResource(resource['id']);
+                                      }
+                                    },
+                                    itemBuilder: (context) => [
+                                      if (canEdit) const PopupMenuItem(value: 'edit', child: Text('Edit')),
+                                      if (canDelete) const PopupMenuItem(value: 'delete', child: Text('Delete', style: TextStyle(color: Colors.red))),
+                                    ],
+                                  ),
+                              ],
                             ),
                             const SizedBox(height: 8),
-                            Text(
-                              description,
-                              maxLines: 3,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(fontSize: 14),
-                            ),
+                            Text(description, maxLines: 3, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 14)),
                             const SizedBox(height: 10),
                             Align(
                               alignment: Alignment.centerRight,
                               child: ElevatedButton.icon(
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor:
-                                  ChanzoColors.secondary,
+                                  backgroundColor: ChanzoColors.secondary,
                                   foregroundColor: ChanzoColors.white,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius:
-                                    BorderRadius.circular(8),
-                                  ),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                 ),
-                                onPressed: () => openFile(context,
-                                    resource['file']),
+                                onPressed: () => openFile(context, resource['file']),
                                 icon: const Icon(Icons.download),
                                 label: const Text("Download"),
                               ),
@@ -241,8 +318,7 @@ class _ResourceCenterScreenState extends State<ResourceCenterScreen> {
                   } else if (isLoadingMore) {
                     return const Padding(
                       padding: EdgeInsets.all(8.0),
-                      child: Center(
-                          child: CircularProgressIndicator()),
+                      child: Center(child: CircularProgressIndicator()),
                     );
                   }
                   return const SizedBox.shrink();

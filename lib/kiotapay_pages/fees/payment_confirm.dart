@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:kiotapay/globalclass/global_methods.dart';
-import 'package:kiotapay/globalclass/kiotapay_constants.dart';
-import 'package:kiotapay/globalclass/kiotapay_fontstyle.dart';
+import 'package:chanzo/globalclass/global_methods.dart';
+import 'package:chanzo/globalclass/kiotapay_constants.dart';
+import 'package:chanzo/globalclass/kiotapay_fontstyle.dart';
 
 import '../../globalclass/chanzo_color.dart';
 import 'payment_results_screen.dart';

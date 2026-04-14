@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 import '../../models/calendar_model.dart';
+import '../kiotapay_authentication/AuthController.dart';
 import 'calendar_card.dart';
 import 'calendar_controller.dart';
 import 'shimmer_calendar.dart';
@@ -12,6 +13,8 @@ class CalendarScreen extends StatelessWidget {
   CalendarScreen({super.key});
 
   final CalendarController controller = Get.put(CalendarController());
+  final AuthController authController = Get.find<AuthController>(); // Initialize AuthController
+
   final Rx<DateTime> selectedDay = DateTime.now().obs;
   final Rx<DateTime> focusedDay = DateTime.now().obs;
 
@@ -28,6 +31,17 @@ class CalendarScreen extends StatelessWidget {
           ),
         ],
       ),
+      // --- ADD PERMISSION UI ---
+      floatingActionButton: authController.hasPermission('calendar-add')
+          ? FloatingActionButton(
+        onPressed: () {
+          // TODO: Open Add Event BottomSheet or Screen
+        },
+        backgroundColor: Theme.of(context).primaryColor,
+        child: const Icon(Icons.add, color: Colors.white),
+      )
+          : null,
+      // --------------------------
       body: Obx(() {
         if (controller.isLoading.value && controller.events.isEmpty) {
           return const ShimmerCalendar();
@@ -63,7 +77,7 @@ class CalendarScreen extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.all(12),
           child: TextField(
-            controller: controller.searchController, // Add this controller to your controller
+            controller: controller.searchController,
             decoration: InputDecoration(
               hintText: 'Search events...',
               prefixIcon: const Icon(Icons.search),
@@ -76,57 +90,10 @@ class CalendarScreen extends StatelessWidget {
                 },
               ),
             ),
-            onChanged: (value) {
-              controller.updateSearch(value);
-            },
-            onSubmitted: (value) {
-              controller.updateSearch(value, submit: true);
-            },
+            onChanged: (value) => controller.updateSearch(value),
+            onSubmitted: (value) => controller.updateSearch(value, submit: true),
             textInputAction: TextInputAction.search,
           ),
-        ),
-        SizedBox(
-          height: 0,
-          child: Obx(() {
-            final categories = controller.events
-                .map((e) => e.category.toLowerCase())
-                .toSet()
-                .toList();
-
-            if (categories.isEmpty) return const SizedBox();
-
-            return ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              itemCount: categories.length,
-              itemBuilder: (context, index) {
-                final category = categories[index];
-                final isSelected = controller.selectedCategories.contains(category);
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  // child: FilterChip(
-                  //   label: Text(category.capitalizeFirst!),
-                  //   selected: isSelected,
-                  //   onSelected: (_) => controller.toggleCategory(category),
-                  //   backgroundColor: Colors.grey.shade200,
-                  //   selectedColor: Theme.of(context).primaryColor.withOpacity(0.2),
-                  //   labelStyle: TextStyle(
-                  //     color: isSelected
-                  //         ? Theme.of(context).primaryColor
-                  //         : Colors.grey.shade800,
-                  //   ),
-                  //   shape: StadiumBorder(
-                  //     side: BorderSide(
-                  //       color: isSelected
-                  //           ? Theme.of(context).primaryColor
-                  //           : Colors.grey.shade300,
-                  //     ),
-                  //   ),
-                  // ),
-                );
-              },
-            );
-          }),
         ),
       ],
     );
@@ -163,21 +130,20 @@ class CalendarScreen extends StatelessWidget {
                 markersAutoAligned: false,
                 canMarkersOverflow: true,
               ),
-              headerStyle: HeaderStyle(
+              headerStyle: const HeaderStyle(
                 formatButtonVisible: false,
                 titleCentered: true,
-                headerPadding: const EdgeInsets.only(bottom: 12),
+                headerPadding: EdgeInsets.only(bottom: 12),
                 leftChevronMargin: EdgeInsets.zero,
                 rightChevronMargin: EdgeInsets.zero,
               ),
-
               daysOfWeekStyle: DaysOfWeekStyle(
                 decoration: BoxDecoration(
                   border: Border(bottom: BorderSide(color: Colors.grey.shade300)),
                 ),
                 weekdayStyle: TextStyle(
-                  fontSize: 14, // Slightly larger font
-                  fontWeight: FontWeight.w500, // Medium weight
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
                   color: Theme.of(Get.context!).textTheme.bodyLarge!.color,
                 ),
                 weekendStyle: TextStyle(
@@ -187,6 +153,7 @@ class CalendarScreen extends StatelessWidget {
                 ),
               ),
               eventLoader: (day) {
+                // Ensure this requested day matches how you mapped eventsByDay
                 final date = DateTime(day.year, day.month, day.day);
                 return controller.eventsByDay[date] ?? [];
               },
@@ -196,82 +163,42 @@ class CalendarScreen extends StatelessWidget {
               },
               selectedDayPredicate: (day) => isSameDay(selectedDay.value, day),
               calendarBuilders: CalendarBuilders(
-                  markerBuilder: (context, date, events) {
-                    if (events.isEmpty) return null;
+                markerBuilder: (context, date, events) {
+                  if (events.isEmpty) return null;
 
-                    return Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: events.map((event) {
-                        Color color;
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: events.map((event) {
+                      Color color;
+                      switch ((event as CalendarEvent).category.toLowerCase()) {
+                        case 'holiday':
+                          color = Colors.green;
+                          break;
+                        case 'exam':
+                          color = Colors.red;
+                          break;
+                        case 'meeting':
+                          color = Colors.blue;
+                          break;
+                        default:
+                          color = Colors.grey;
+                      }
 
-                        switch ((event as CalendarEvent).category.toLowerCase()) {
-                          case 'holiday':
-                            color = Colors.green;
-                            break;
-                          case 'exam':
-                            color = Colors.red;
-                            break;
-                          case 'meeting':
-                            color = Colors.blue;
-                            break;
-                          default:
-                            color = Colors.grey;
-                        }
-
-                        return Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 1),
-                          width: 6,
-                          height: 6,
-                          decoration: BoxDecoration(
-                            color: color,
-                            shape: BoxShape.circle,
-                          ),
-                        );
-                      }).toList(),
-                    );
-                  },
+                      return Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 1),
+                        width: 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: color,
+                          shape: BoxShape.circle,
+                        ),
+                      );
+                    }).toList(),
+                  );
+                },
               ),
             ),
           ),
-          // SliverToBoxAdapter(
-          //   child: Padding(
-          //     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          //     child: Text(
-          //       DateFormat('EEEE, MMMM d, y').format(selectedDay.value),
-          //       style: Theme.of(Get.context!).textTheme.titleLarge,
-          //     ),
-          //   ),
-          // ),
-          // SliverPadding(
-          //   padding: const EdgeInsets.symmetric(horizontal: 16),
-          //   sliver: Obx(() {
-          //     final date = DateTime(
-          //       selectedDay.value.year,
-          //       selectedDay.value.month,
-          //       selectedDay.value.day,
-          //     );
-          //     final events = controller.eventsByDay[date] ?? [];
-          //
-          //     if (events.isEmpty) {
-          //       return SliverToBoxAdapter(
-          //         child: Padding(
-          //           padding: const EdgeInsets.all(16),
-          //           child: Text(
-          //             'No events to show',
-          //             style: Theme.of(Get.context!).textTheme.bodyLarge,
-          //           ),
-          //         ),
-          //       );
-          //     }
-          //
-          //     return SliverList(
-          //       delegate: SliverChildBuilderDelegate(
-          //             (context, index) => CalendarCard(event: events[index]),
-          //         childCount: events.length,
-          //       ),
-          //     );
-          //   }),
-          // ),
         ],
       );
     });
@@ -329,7 +256,21 @@ class CalendarScreen extends StatelessWidget {
                 child: Center(child: CircularProgressIndicator()),
               );
             }
-            return CalendarCard(event: filtered[index]);
+
+            final event = filtered[index];
+
+            // --- EDIT / DELETE PERMISSION UI PASS-DOWN ---
+            return CalendarCard(
+              event: event,
+              canEdit: authController.hasPermission('calendar-edit'),
+              canDelete: authController.hasPermission('calendar-delete'),
+              onEdit: () {
+                // TODO: Open Edit Screen
+              },
+              onDelete: () {
+                // TODO: Trigger Delete API via Controller
+              },
+            );
           },
         );
       }),

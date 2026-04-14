@@ -3,7 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'package:kiotapay/globalclass/kiotapay_constants.dart';
+import 'package:chanzo/globalclass/kiotapay_constants.dart';
 import '../../globalclass/global_methods.dart';
 import 'notification_model.dart';
 

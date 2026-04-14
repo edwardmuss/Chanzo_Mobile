@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:get/get.dart';
-import 'package:kiotapay/kiotapay_pages/fees/payment_methods_service.dart';
+import 'package:chanzo/kiotapay_pages/fees/payment_methods_service.dart';
 import '../../globalclass/chanzo_color.dart';
 import '../../models/payment_methods.dart';
 import '../kiotapay_authentication/AuthController.dart';

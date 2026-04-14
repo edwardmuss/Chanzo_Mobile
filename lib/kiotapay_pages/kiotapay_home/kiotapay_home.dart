@@ -7,26 +7,26 @@ import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:gradient_icon/gradient_icon.dart';
-import 'package:kiotapay/globalclass/chanzo_color.dart';
-import 'package:kiotapay/globalclass/kiotapay_fontstyle.dart';
-import 'package:kiotapay/globalclass/kiotapay_global_classes.dart';
-import 'package:kiotapay/globalclass/kiotapay_icons.dart';
-import 'package:kiotapay/kiotapay_pages/attendance/student_attendance.dart';
-import 'package:kiotapay/kiotapay_pages/calendar/calendar_screen.dart';
-import 'package:kiotapay/kiotapay_pages/homework/homework_screen.dart';
-import 'package:kiotapay/kiotapay_pages/kiotapay_authentication/kiotapay_pincode.dart';
-import 'package:kiotapay/kiotapay_pages/kiotapay_drawer/kiotapay_drawer.dart';
-import 'package:kiotapay/globalclass/text_icon_button.dart';
-import 'package:kiotapay/kiotapay_pages/notice_board/notice_board_screen.dart';
-import 'package:kiotapay/kiotapay_pages/resource_center/resource_center_screen.dart';
-import 'package:kiotapay/kiotapay_pages/timetable/timetable_screen.dart';
-import 'package:kiotapay/kiotapay_theme/kiotapay_themecontroller.dart';
+import 'package:chanzo/globalclass/chanzo_color.dart';
+import 'package:chanzo/globalclass/kiotapay_fontstyle.dart';
+import 'package:chanzo/globalclass/kiotapay_global_classes.dart';
+import 'package:chanzo/globalclass/kiotapay_icons.dart';
+import 'package:chanzo/kiotapay_pages/attendance/student_attendance.dart';
+import 'package:chanzo/kiotapay_pages/calendar/calendar_screen.dart';
+import 'package:chanzo/kiotapay_pages/homework/homework_screen.dart';
+import 'package:chanzo/kiotapay_pages/kiotapay_authentication/kiotapay_pincode.dart';
+import 'package:chanzo/kiotapay_pages/kiotapay_drawer/kiotapay_drawer.dart';
+import 'package:chanzo/globalclass/text_icon_button.dart';
+import 'package:chanzo/kiotapay_pages/notice_board/notice_board_screen.dart';
+import 'package:chanzo/kiotapay_pages/resource_center/resource_center_screen.dart';
+import 'package:chanzo/kiotapay_pages/timetable/timetable_screen.dart';
+import 'package:chanzo/kiotapay_theme/kiotapay_themecontroller.dart';
 import 'package:bootstrap_icons/bootstrap_icons.dart';
 import 'package:flutter_initicon/flutter_initicon.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:nb_utils/nb_utils.dart' hide DialogType;
-import 'package:kiotapay/globalclass/kiotapay_constants.dart';
+import 'package:chanzo/globalclass/kiotapay_constants.dart';
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
@@ -99,7 +99,6 @@ class _KiotaPayHomeState extends State<KiotaPayHome> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<NotificationProvider>(context, listen: false).fetchUnreadCount();
     });
-    checkForUpdate();
     _loadShowBalancePreference();
     refreshUserProfile(context);
     authController.fetchAndCacheFeeBalance();
@@ -185,82 +184,6 @@ class _KiotaPayHomeState extends State<KiotaPayHome> {
 
   void _onLoading() {
     refreshController.refreshCompleted();
-  }
-
-  Future<void> checkForUpdate() async {
-    final String installedVersion = await getInstalledVersion();
-    final String latestVersion = await fetchLatestVersion();
-
-    if (_compareVersions(installedVersion, latestVersion) < 0) {
-      // _showUpdateDialog();
-    }
-  }
-
-  Future<String> getInstalledVersion() async {
-    final PackageInfo packageInfo = await PackageInfo.fromPlatform();
-    return packageInfo.version;
-  }
-
-  Future<String> fetchLatestVersion() async {
-    final response = await http
-        .get(Uri.parse('https://cloudrebue.co.ke/latest_version.txt'));
-    if (response.statusCode == 200) {
-      return response.body.trim();
-    } else {
-      throw Exception('Failed to fetch version info');
-    }
-  }
-
-  int _compareVersions(String v1, String v2) {
-    final List<int> version1 = v1.split('.').map(int.parse).toList();
-    final List<int> version2 = v2.split('.').map(int.parse).toList();
-
-    for (int i = 0; i < version1.length; i++) {
-      if (i >= version2.length) return 1;
-      if (version1[i] < version2[i]) return -1;
-      if (version1[i] > version2[i]) return 1;
-    }
-    return 0;
-  }
-
-  void _showUpdateDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: true, // Make dialog undismissible by tapping outside
-      builder: (BuildContext context) {
-        return WillPopScope(
-          onWillPop: () async => false, // Prevent back button dismissal
-          child: AlertDialog(
-            title: Text('Update Available'),
-            content: Text(
-                'A new version of the app is available. Please update to the latest version.'),
-            actions: <Widget>[
-              TextButton(
-                child: Text('Update'),
-                onPressed: () {
-                  // Open the appropriate store page
-                  if (Platform.isAndroid) {
-                    _launchURL(
-                        'https://play.google.com/store/apps/details?id=com.chanzo.app');
-                  } else if (Platform.isIOS) {
-                    _launchURL('https://apps.apple.com/app/id6504042142');
-                  }
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  void _launchURL(String url) async {
-    final Uri uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    } else {
-      throw 'Could not launch $url';
-    }
   }
 
   Future<void> initiateMpesaExpress(String phone, int amount) async {
@@ -463,29 +386,32 @@ class _KiotaPayHomeState extends State<KiotaPayHome> {
                     child: Column(
                       children: [
                         Center(
-                          child: Column(
+                          child: Obx(() => Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
                                 authController.schoolName,
+                                textAlign: TextAlign.center,
                                 style: pregular_hsm.copyWith(
                                   color: ChanzoColors.lightSecondary,
                                 ),
                               ),
                               Text(
                                 "Term ${authController.currentAcademicTermName}, ${authController.currentAcademicSessionName}",
+                                textAlign: TextAlign.center,
                                 style: pmedium_lg.copyWith(
                                   color: ChanzoColors.white,
                                 ),
                               ),
-                              Obx(() => Text(
-                                    authController.selectedStudentName,
-                                    style: pmedium_lg.copyWith(
-                                      color: ChanzoColors.lightSecondary,
-                                    ),
-                                  ))
+                              Text(
+                                authController.selectedStudentName,
+                                textAlign: TextAlign.center,
+                                style: pmedium_lg.copyWith(
+                                  color: ChanzoColors.lightSecondary,
+                                ),
+                              )
                             ],
-                          ),
+                          )),
                         ),
                         SizedBox(
                           height: height / 36,

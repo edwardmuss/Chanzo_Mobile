@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:kiotapay/globalclass/chanzo_color.dart';
+import 'package:chanzo/globalclass/chanzo_color.dart';
 
 class GridCard extends StatelessWidget {
   final String title;

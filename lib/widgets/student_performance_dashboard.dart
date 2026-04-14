@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:get/get.dart';
-import 'package:kiotapay/globalclass/chanzo_color.dart';
+import 'package:chanzo/globalclass/chanzo_color.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../globalclass/kiotapay_fontstyle.dart';

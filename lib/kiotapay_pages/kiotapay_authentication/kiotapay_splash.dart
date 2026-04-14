@@ -1,12 +1,12 @@
 import 'dart:convert';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:kiotapay/globalclass/chanzo_color.dart';
-import 'package:kiotapay/globalclass/kiotapay_icons.dart';
-import 'package:kiotapay/kiotapay_pages/kiotapay_authentication/kiotapay_onboarding.dart';
+import 'package:chanzo/globalclass/chanzo_color.dart';
+import 'package:chanzo/globalclass/kiotapay_icons.dart';
+import 'package:chanzo/kiotapay_pages/kiotapay_authentication/kiotapay_onboarding.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:kiotapay/kiotapay_pages/kiotapay_authentication/kiotapay_signin.dart';
+import 'package:chanzo/kiotapay_pages/kiotapay_authentication/kiotapay_signin.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../globalclass/global_methods.dart';

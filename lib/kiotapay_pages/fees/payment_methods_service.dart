@@ -26,9 +26,16 @@ class PaymentMethodsService {
     }
 
     final Map<String, dynamic> jsonData = json.decode(response.body);
-    final data = jsonData['data'] as Map<String, dynamic>;
 
-    return data.entries
+    // Safely extract 'data'. If the backend sends an empty array [], it stays an empty Map.
+    final rawData = jsonData['data'];
+    Map<String, dynamic> dataMap = {};
+
+    if (rawData is Map) {
+      dataMap = Map<String, dynamic>.from(rawData);
+    }
+
+    return dataMap.entries
         .map((e) => PaymentMethod.fromJson(e.key, e.value))
         .where((method) => method.isActive)
         .toList();

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:kiotapay/globalclass/kiotapay_prefsname.dart';
-import 'package:kiotapay/kiotapay_theme/kiotapay_theme.dart';
+import 'package:chanzo/globalclass/kiotapay_prefsname.dart';
+import 'package:chanzo/kiotapay_theme/kiotapay_theme.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

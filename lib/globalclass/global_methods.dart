@@ -11,7 +11,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
-import 'package:kiotapay/globalclass/chanzo_color.dart';
+import 'package:chanzo/globalclass/chanzo_color.dart';
 import 'package:open_file/open_file.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
@@ -388,11 +388,6 @@ String? formatPhoneNumber(String? number) {
 
   // For any other cases, return the original number unmodified
   return number;
-}
-
-Future<String> getInstalledVersion() async {
-  final PackageInfo packageInfo = await PackageInfo.fromPlatform();
-  return packageInfo.version;
 }
 
 Future<void> saveAndOpenPdf({
@@ -951,4 +946,80 @@ Future<void> openContextSwitcher(
       });
     },
   );
+}
+
+Future<void> checkForUpdate(BuildContext context) async {
+  try {
+    final String installedVersion = await getInstalledVersion();
+    final String latestVersion = await fetchLatestVersion();
+
+    if (compareVersions(installedVersion, latestVersion) < 0) {
+      showUpdateDialog(context);
+    }
+  } catch (e) {
+    print("Failed to check for updates: $e");
+  }
+}
+
+Future<String> getInstalledVersion() async {
+  final PackageInfo packageInfo = await PackageInfo.fromPlatform();
+  return packageInfo.version;
+}
+
+Future<String> fetchLatestVersion() async {
+  final response = await http.get(Uri.parse('https://app.chanzo.co.ke/latest_version.txt'));
+  if (response.statusCode == 200) {
+    return response.body.trim();
+  } else {
+    throw Exception('Failed to fetch version info');
+  }
+}
+
+int compareVersions(String v1, String v2) {
+  final List<int> version1 = v1.split('.').map(int.parse).toList();
+  final List<int> version2 = v2.split('.').map(int.parse).toList();
+
+  for (int i = 0; i < version1.length; i++) {
+    if (i >= version2.length) return 1;
+    if (version1[i] < version2[i]) return -1;
+    if (version1[i] > version2[i]) return 1;
+  }
+  return 0;
+}
+
+void showUpdateDialog(BuildContext context) {
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (BuildContext context) {
+      return WillPopScope(
+        onWillPop: () async => false,
+        child: AlertDialog(
+          title: const Text('Update Available'),
+          content: const Text('A new version of the app is available. Please update to the latest version.'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Update'),
+              onPressed: () {
+                if (Platform.isAndroid) {
+                  launchURL('https://play.google.com/store/apps/details?id=com.chanzo.app');
+                } else if (Platform.isIOS) {
+                  launchURL('https://apps.apple.com/app/id6758308122');
+                }
+              },
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
+
+void launchURL(String url) async {
+  final Uri uri = Uri.parse(url);
+  if (await canLaunchUrl(uri)) {
+    await launchUrl(uri);
+  } else {
+    throw 'Could not launch $url';
+  }
 }

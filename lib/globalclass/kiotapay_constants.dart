@@ -6,12 +6,12 @@ class KiotaPayConstants {
   static const _secure = FlutterSecureStorage();
 
   static final String currency = "KES ";
-  static final bool isLive = true;
+  static final bool isLive = false;
 
   /// Mutable baseUrl (changes when country changes)
   static String baseUrl = isLive
       ? 'https://app.chanzo.co.ke/api/v1/'
-      : 'https://diamonds-item-motivation-gdp.trycloudflare.com/api/v1/';
+      : 'https://antelope-refined-nicely.ngrok-free.app/api/v1/';
 
   /// Always derived from baseUrl
   static String get webUrl => baseUrl.replaceAll(RegExp(r'api/v1/$'), '');
@@ -36,6 +36,9 @@ class KiotaPayConstants {
   static String get contextGet => '${baseUrl}auth/context';
   static String get contextSwitch => '${baseUrl}auth/context/switch';
 
+  // ---------------- Examination (GETTERS) ----------------
+  static String get teachersDashboard => '${baseUrl}dashboard/teacher';
+
   // ---------------- Finance and Fee Management (GETTERS) ----------------
   static String get getStudentFee => '${baseUrl}fees/student';
   static String get getStudentFeePdf => '${baseUrl}fees/structure/generate';
@@ -53,14 +56,23 @@ class KiotaPayConstants {
 
   // ---------------- Attendance (GETTERS) ----------------
   static String get getStudentAttendance => '${baseUrl}attendance/student';
+  static String get getClassAttendance => '${baseUrl}attendance/class';
+  static String get storeClassAttendance => '${baseUrl}attendance';
 
   // ---------------- Resource Center (GETTERS) ----------------
-  static String get getResourceCenter => '${baseUrl}resource-center';
+  static String get resourceCenter => '${baseUrl}resource-center';
+
+  // ---------------- Resource Types (GETTERS) ----------------
+  static String get getResourceTypesByBranch => '${baseUrl}resource-types/:branch_id';
 
   // ---------------- Homework (GETTERS) ----------------
   static String get getStudentHomeWork => '${baseUrl}homework';
+  static String get getTeacherHomeWork => '${baseUrl}homework/teacher';
+  static String get getTeacherSubjects => '${baseUrl}homework/teacher/subjects';
   static String get getStudentHomeWorkSubmissions => '${baseUrl}homework-submissions/:homeworkId';
-  static String get submitStudentHomeWork => '${baseUrl}homeworks/submit/:homeworkId';
+  static String get evaluateStudentHomeWorkSubmissions => '${baseUrl}homework-submissions/:submissionId/evaluate';
+  static String get submitStudentHomeWork => '${baseUrl}homework/submit/:homeworkId';
+  static String get addEditHomeWork => '${baseUrl}homework';
 
   // ---------------- Notice Board (GETTERS) ----------------
   static String get getNotices => '${baseUrl}notice-board';
@@ -80,6 +92,12 @@ class KiotaPayConstants {
   // ---------------- Academic Sessions (GETTERS) ----------------
   static String get getAllAcademicSessionsByBranch => '${baseUrl}academic-sessions/:branch_id/branch';
   static String get getStudentAcademicSessions => '${baseUrl}academic-sessions/:student_id/student';
+
+  // ---------------- Classes (GETTERS) ----------------
+  static String get getClassesByBranch => '${baseUrl}classes/:branch_id';
+
+  // ---------------- My Classes Stream and Subjects (GETTERS) ----------------
+  static String get getClassesStreamSubject => '${baseUrl}class/teacher';
 
 static final String getHash = baseUrl + 'auth/mobile/global/hash/login';
   static final String faceIdLogin = baseUrl + 'auth/mobile/global/login';
