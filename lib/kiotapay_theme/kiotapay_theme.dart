@@ -92,6 +92,7 @@ class KiotaPayMythemes {
 
   static final darkTheme = ThemeData(
     //scaffoldBackgroundColor: ChanzoColors.grey_90,
+    scaffoldBackgroundColor: const Color(0xFF121212),
     //primaryColor: ChanzoColors.grey_90,
     brightness: Brightness.dark,
     dialogTheme: DialogThemeData(
@@ -199,6 +200,8 @@ class KiotaPayMythemes {
       primary: ChanzoColors.secondary,
       secondaryContainer: Colors.white24,
       onSecondaryContainer: Colors.white, // Icon color
+      surface: Color(0xFF1E1E1E), // Slightly lighter than scaffold for contrast
+      background: Color(0xFF121212), // Same as scaffoldBackgroundColor
     ),
   );
 }

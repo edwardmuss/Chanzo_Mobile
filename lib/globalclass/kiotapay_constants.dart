@@ -99,6 +99,13 @@ class KiotaPayConstants {
   // ---------------- My Classes Stream and Subjects (GETTERS) ----------------
   static String get getClassesStreamSubject => '${baseUrl}class/teacher';
 
+  // ---------------- Lesson Plan and Scheme of Work (GETTERS) ----------------
+  static String get lessonPlan => '${baseUrl}lesson-plans';
+  static String get schemeOfWork => '${baseUrl}scheme-of-work';
+
+  // ---------------- Payroll (GETTERS) ----------------
+  static String get payroll => '${baseUrl}payroll';
+
 static final String getHash = baseUrl + 'auth/mobile/global/hash/login';
   static final String faceIdLogin = baseUrl + 'auth/mobile/global/login';
   static final String multiAccountLogin =

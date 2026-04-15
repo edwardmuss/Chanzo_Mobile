@@ -12,6 +12,9 @@ import 'package:chanzo/globalclass/text_icon_button.dart';
 import 'package:chanzo/kiotapay_pages/kiotapay_home/kiotapay_home.dart';
 import 'package:chanzo/kiotapay_pages/kiotapay_settings/kiotapay_settings.dart';
 import 'package:chanzo/kiotapay_pages/kiotapay_statistics/kiotapay_statistics.dart';
+import 'package:chanzo/kiotapay_pages/payroll/payroll_screen.dart';
+import 'package:chanzo/kiotapay_pages/teachers/teacher_classes_subjects_screen.dart';
+import 'package:chanzo/kiotapay_pages/timetable/timetable_screen.dart';
 import 'package:chanzo/kiotapay_theme/kiotapay_themecontroller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -192,8 +195,8 @@ class _KiotaPayDashboardState extends State<KiotaPayDashboard> with WidgetsBindi
     if (authController.userRole == 'teacher') {
       return [
         const TeacherHome(),
-        const Placeholder(), // Replace with Teacher Classes/Students Screen
-        const Placeholder(), // Replace with Teacher Timetable Screen
+        const PayrollScreen(),
+        const TimetableScreen(isTeacherTimetable: true,),
         const KiotaPaySettings(), // Reuse settings
       ];
     }
@@ -292,7 +295,7 @@ class _KiotaPayDashboardState extends State<KiotaPayDashboard> with WidgetsBindi
           ItemBottomBar(
             icon: isTeacher ? BootstrapIcons.people : BootstrapIcons.bar_chart_line,
             selected: _selectedItemIndex == 1,
-            label: isTeacher ? "My Classes" : "Finance", // Dynamic Label
+            label: isTeacher ? "Payroll" : "Finance", // Dynamic Label
             onPressed: () => _onTap(1),
           ),
           const SizedBox(width: 50), // Space for floating action button

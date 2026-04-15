@@ -12,12 +12,13 @@ class TextIconButton extends StatelessWidget {
     this.splashColor,
     this.color,
     this.trailingText,
-    this.size, this.iconSize,
+    this.size,
+    this.iconSize,
   });
 
   final VoidCallback? onPressed;
   final IconData icon;
-  final IconData? leftIcon;
+  final IconData? leftIcon; // Note: This is used as the trailing (right) icon in your Wrap
   final String label;
   final Color? splashColor;
   final Color? color;
@@ -27,14 +28,24 @@ class TextIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Detect if the app is currently in Dark Mode
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Set dynamic default colors based on the theme
+    final Color defaultIconBg = isDark ? Colors.white12 : ChanzoColors.primary20;
+    // Orange for dark mode, Primary for light mode
+    final Color defaultIconColor = isDark ? ChanzoColors.secondary : ChanzoColors.primary;
+    final Color defaultChevronColor = isDark ? Colors.white54 : ChanzoColors.primary;
+    final Color defaultTextColor = isDark ? Colors.white : ChanzoColors.textgrey;
+    final Color defaultSplashColor = isDark ? ChanzoColors.secondary.withOpacity(0.3) : ChanzoColors.primary;
+
     return ListTile(
-      // contentPadding: EdgeInsets.only(left: 0.0, right: 0.0),
       onTap: onPressed,
       leading: ClipOval(
         child: Material(
-          color: splashColor ?? ChanzoColors.primary20, // Button color
+          color: splashColor ?? defaultIconBg,
           child: InkWell(
-            splashColor: ChanzoColors.primary, // Splash color
+            splashColor: defaultSplashColor,
             onTap: onPressed,
             child: SizedBox(
               width: size ?? 40,
@@ -42,7 +53,7 @@ class TextIconButton extends StatelessWidget {
               child: Icon(
                 icon,
                 size: iconSize ?? 20,
-                color: color ?? ChanzoColors.primary,
+                color: color ?? defaultIconColor,
               ),
             ),
           ),
@@ -50,19 +61,21 @@ class TextIconButton extends StatelessWidget {
       ),
       title: Text(
         label,
-        style: pregular_md.copyWith(color: ChanzoColors.textgrey),
+        style: pregular_md.copyWith(color: defaultTextColor),
       ),
       trailing: Wrap(
-        spacing: 12, // space between two icons
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 12,
         children: <Widget>[
-          Text(
-            trailingText ?? '',
-            style: pregular_sm.copyWith(color: ChanzoColors.textgrey),
-          ),
+          if (trailingText != null)
+            Text(
+              trailingText!,
+              style: pregular_sm.copyWith(color: isDark ? Colors.white70 : ChanzoColors.textgrey),
+            ),
           Icon(
             leftIcon ?? Icons.chevron_right,
             size: 20,
-            color: ChanzoColors.primary,
+            color: defaultChevronColor, // Muted in dark mode so it doesn't distract
           ),
         ],
       ),

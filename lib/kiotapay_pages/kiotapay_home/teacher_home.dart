@@ -32,7 +32,7 @@ class _TeacherHomeState extends State<TeacherHome> {
         color: ChanzoColors.primary,
         child: Obx(() {
           if (dashboardController.isLoading.value) {
-            return _buildShimmerLoader();
+            return _buildShimmerLoader(context);
           }
 
           if (dashboardController.hasError.value) {
@@ -115,6 +115,7 @@ class _TeacherHomeState extends State<TeacherHome> {
     final streamName = classData['stream'] ?? '';
     final studentCount = classData['student_count'] ?? 0;
     final meanScore = classData['mean_score']?.toString() ?? 'N/A';
+    final meanGrade = classData['mean_grade']?.toString() ?? 'N/A';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -160,7 +161,7 @@ class _TeacherHomeState extends State<TeacherHome> {
           ),
           const SizedBox(height: 4),
           Text(
-            meanScore,
+            "${meanScore} ($meanGrade)",
             style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
           ),
         ],
@@ -169,6 +170,9 @@ class _TeacherHomeState extends State<TeacherHome> {
   }
 
   Widget _buildSubjectsGrid() {
+    // Detect Dark Mode
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -176,7 +180,7 @@ class _TeacherHomeState extends State<TeacherHome> {
         crossAxisCount: 2,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
-        childAspectRatio: 1.1, // Adjust based on how tall you want the cards
+        childAspectRatio: 1.1,
       ),
       itemCount: dashboardController.subjectPerformances.length,
       itemBuilder: (context, index) {
@@ -185,14 +189,20 @@ class _TeacherHomeState extends State<TeacherHome> {
         final className = subjectData['class'] ?? '';
         final streamName = subjectData['stream'] ?? '';
         final meanScore = double.tryParse(subjectData['mean_score']?.toString() ?? '0') ?? 0.0;
+        final meanGrade = subjectData['mean_grade']?.toString() ?? 'N/A';
 
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            // Dynamic Card Background
+            color: isDark ? Theme.of(context).cardColor : Colors.white,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.grey.shade200),
-            boxShadow: [
+            // 3. Dynamic Border Color
+            border: Border.all(
+              color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
+            ),
+            // Remove shadows in dark mode for a flatter, cleaner look
+            boxShadow: isDark ? [] : [
               BoxShadow(
                 color: Colors.grey.withOpacity(0.05),
                 blurRadius: 10,
@@ -209,7 +219,11 @@ class _TeacherHomeState extends State<TeacherHome> {
                 children: [
                   Text(
                     "$className $streamName",
-                    style: TextStyle(fontSize: 11, color: ChanzoColors.primary, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                        fontSize: 11,
+                        color: isDark ? ChanzoColors.secondary : ChanzoColors.primary, // Orange in dark mode looks great!
+                        fontWeight: FontWeight.bold
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -217,6 +231,7 @@ class _TeacherHomeState extends State<TeacherHome> {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, height: 1.2),
+                    // Note: Removed hardcoded color here so it auto-switches to White in Dark Mode
                   ),
                 ],
               ),
@@ -224,16 +239,19 @@ class _TeacherHomeState extends State<TeacherHome> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  const Text(
+                  Text(
                     "Score",
-                    style: TextStyle(color: Colors.grey, fontSize: 12),
+                    style: TextStyle(
+                        color: isDark ? Colors.white54 : Colors.grey, // Muted text for dark mode
+                        fontSize: 12
+                    ),
                   ),
                   Text(
-                    meanScore.toStringAsFixed(1),
+                    "${meanScore.toStringAsFixed(1)} ($meanGrade)",
                     style: TextStyle(
-                      fontSize: 20,
+                      fontSize: 15,
                       fontWeight: FontWeight.bold,
-                      // Change color based on score performance
+                      // Bright colors like Green/Orange/Red naturally look great in Dark Mode
                       color: meanScore >= 80 ? Colors.green : (meanScore >= 50 ? Colors.orange : Colors.red),
                     ),
                   ),
@@ -246,25 +264,33 @@ class _TeacherHomeState extends State<TeacherHome> {
     );
   }
 
-  Widget _buildShimmerLoader() {
+  Widget _buildShimmerLoader(BuildContext context) {
+    // Detect Dark Mode
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Define dynamic Shimmer colors
+    final Color baseColor = isDark ? Colors.grey.shade800 : Colors.grey.shade300;
+    final Color highlightColor = isDark ? Colors.grey.shade700 : Colors.grey.shade100;
+    final Color containerColor = isDark ? Colors.grey.shade900 : Colors.white;
+
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Shimmer.fromColors(
-            baseColor: Colors.grey[300]!,
-            highlightColor: Colors.grey[100]!,
-            child: Container(width: 150, height: 24, color: Colors.white),
+            baseColor: baseColor,
+            highlightColor: highlightColor,
+            child: Container(width: 150, height: 24, color: containerColor),
           ),
           const SizedBox(height: 24),
           Shimmer.fromColors(
-            baseColor: Colors.grey[300]!,
-            highlightColor: Colors.grey[100]!,
+            baseColor: baseColor,
+            highlightColor: highlightColor,
             child: Container(
               width: double.infinity,
               height: 140,
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+              decoration: BoxDecoration(color: containerColor, borderRadius: BorderRadius.circular(16)),
             ),
           ),
           const SizedBox(height: 24),
@@ -272,17 +298,37 @@ class _TeacherHomeState extends State<TeacherHome> {
             children: [
               Expanded(
                 child: Shimmer.fromColors(
-                  baseColor: Colors.grey[300]!,
-                  highlightColor: Colors.grey[100]!,
-                  child: Container(height: 120, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16))),
+                  baseColor: baseColor,
+                  highlightColor: highlightColor,
+                  child: Container(height: 120, decoration: BoxDecoration(color: containerColor, borderRadius: BorderRadius.circular(16))),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Shimmer.fromColors(
-                  baseColor: Colors.grey[300]!,
-                  highlightColor: Colors.grey[100]!,
-                  child: Container(height: 120, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16))),
+                  baseColor: baseColor,
+                  highlightColor: highlightColor,
+                  child: Container(height: 120, decoration: BoxDecoration(color: containerColor, borderRadius: BorderRadius.circular(16))),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              Expanded(
+                child: Shimmer.fromColors(
+                  baseColor: baseColor,
+                  highlightColor: highlightColor,
+                  child: Container(height: 120, decoration: BoxDecoration(color: containerColor, borderRadius: BorderRadius.circular(16))),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Shimmer.fromColors(
+                  baseColor: baseColor,
+                  highlightColor: highlightColor,
+                  child: Container(height: 120, decoration: BoxDecoration(color: containerColor, borderRadius: BorderRadius.circular(16))),
                 ),
               ),
             ],

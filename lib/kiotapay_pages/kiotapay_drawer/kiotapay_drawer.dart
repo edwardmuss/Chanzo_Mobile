@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:bootstrap_icons/bootstrap_icons.dart';
 import 'package:chanzo/kiotapay_pages/homework/teacher_homework_screen.dart';
+import 'package:chanzo/kiotapay_pages/teachers/scheme_of_work/scheme_of_work_screen.dart';
+import 'package:chanzo/kiotapay_pages/teachers/teacher_classes_subjects_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_initicon/flutter_initicon.dart';
 import 'package:get/get.dart';
@@ -36,6 +38,7 @@ import 'package:http/http.dart' as http;
 
 import '../kiotapay_authentication/AuthController.dart';
 import '../resource_center/resource_center_screen.dart';
+import '../teachers/lesson_plan/lesson_plan_screen.dart';
 import '../timetable/timetable_filter_screen.dart';
 
 class KiotaPayDrawer extends StatefulWidget {
@@ -315,6 +318,14 @@ class _KiotaPayDrawerState extends State<KiotaPayDrawer> {
   Widget _buildMenuItems(BuildContext context, AuthController authController) {
     final isParent = authController.userRole == 'parent';
     final isTeacher = authController.userRole == 'teacher';
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    // Set dynamic default colors based on the theme
+    final Color defaultIconBg = isDark ? Colors.white12 : ChanzoColors.primary20;
+    // Orange for dark mode, Primary for light mode
+    final Color defaultIconColor = isDark ? ChanzoColors.secondary : ChanzoColors.primary;
+    final Color defaultChevronColor = isDark ? Colors.white54 : ChanzoColors.primary;
+    final Color defaultTextColor = isDark ? Colors.white : ChanzoColors.textgrey;
+    final Color defaultSplashColor = isDark ? ChanzoColors.secondary.withOpacity(0.3) : ChanzoColors.primary;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 0),
@@ -376,10 +387,10 @@ class _KiotaPayDrawerState extends State<KiotaPayDrawer> {
             TextIconButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                // TODO: Route to Teacher's Classes
+                Get.to(() => TeacherClassesSubjectsScreen());
               },
               icon: BootstrapIcons.people,
-              label: 'My Classes',
+              label: 'My Classes & Subjects',
             ),
             // Add more teacher-specific quick links here
           ],
@@ -422,21 +433,21 @@ class _KiotaPayDrawerState extends State<KiotaPayDrawer> {
                 child: ExpansionTile(
                   leading: ClipOval(
                     child: Container(
-                      color: ChanzoColors.primary20,
+                      color: defaultIconBg,
                       width: 40,
                       height: 40,
-                      child: const Icon(Icons.history, size: 20, color: ChanzoColors.primary),
+                      child: Icon(Icons.history, size: 20, color: defaultIconColor),
                     ),
                   ),
                   title: Text(
                     'Timetables',
-                    style: pregular_md.copyWith(color: ChanzoColors.textgrey),
+                    style: pregular_md.copyWith(color: defaultTextColor),
                   ),
                   childrenPadding: const EdgeInsets.only(left: 56), // Indent sub-items
                   children: [
                     ListTile(
                       dense: true,
-                      title: Text('My Timetable', style: pregular_md.copyWith(color: ChanzoColors.textgrey)),
+                      title: Text('My Timetable', style: pregular_md.copyWith(color: defaultTextColor)),
                       onTap: () {
                         Navigator.pop(context); // Close Drawer
                         Get.to(() => const TimetableScreen(
@@ -446,7 +457,7 @@ class _KiotaPayDrawerState extends State<KiotaPayDrawer> {
                     ),
                     ListTile(
                       dense: true,
-                      title: Text('Class Timetables', style: pregular_md.copyWith(color: ChanzoColors.textgrey)),
+                      title: Text('Class Timetables', style: pregular_md.copyWith(color: defaultTextColor),),
                       onTap: () {
                         Navigator.pop(context); // Close Drawer
                         Get.to(() => const TimetableFilterScreen()); // Go to filter screen
@@ -492,6 +503,24 @@ class _KiotaPayDrawerState extends State<KiotaPayDrawer> {
               label: 'Homework',
             ),
 
+          if (authController.hasPermission('lesson_plan-view'))
+            TextIconButton(
+              onPressed: () {
+                Get.to(() => LessonPlanScreen());
+              },
+              icon: Icons.dialpad_rounded,
+              label: 'Lesson Plan',
+            ),
+
+          if (authController.hasPermission('record_of_work-view'))
+            TextIconButton(
+              onPressed: () {
+                Get.to(() => SchemeOfWorkScreen());
+              },
+              icon: Icons.speed,
+              label: 'Scheme of Work',
+            ),
+
           // ==========================================
           // UNIVERSAL BOTTOM MENU (Settings/Logout)
           // ==========================================
@@ -500,19 +529,19 @@ class _KiotaPayDrawerState extends State<KiotaPayDrawer> {
           ListTile(
             leading: ClipOval(
               child: Material(
-                color: ChanzoColors.primary20,
+                color: defaultIconBg,
                 child: InkWell(
-                  splashColor: ChanzoColors.primary,
+                  splashColor: defaultSplashColor,
                   onTap: () {},
-                  child: const SizedBox(
+                  child: SizedBox(
                     width: 40,
                     height: 40,
-                    child: Icon(Icons.dark_mode, size: 20, color: ChanzoColors.primary),
+                    child: Icon(Icons.dark_mode, size: 20, color: defaultIconColor),
                   ),
                 ),
               ),
             ),
-            title: Text("Dark Mode", style: pregular_md.copyWith(color: ChanzoColors.textgrey)),
+            title: Text("Dark Mode", style: pregular_md.copyWith(color: defaultTextColor)),
             trailing: Obx(() => Switch(
               activeColor: ChanzoColors.primary,
               onChanged: (state) => Get.find<KiotaPayThemecontroler>().toggleTheme(),

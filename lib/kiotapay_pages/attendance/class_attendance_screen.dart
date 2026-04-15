@@ -57,11 +57,12 @@ class _ClassAttendanceScreenState extends State<ClassAttendanceScreen> {
   }
 
   Future<void> _fetchClasses() async {
-    final branchId = authController.activeBranchId ?? authController.activeBranchId;
+    final branchId = authController.activeBranchId ?? authController.user['branch_id'];
     if (branchId == null) return;
+    final url = KiotaPayConstants.getClassesByBranch.replaceAll(':branch_id', branchId.toString());
 
     try {
-      final response = await DioHelper().get('${KiotaPayConstants.baseUrl}classes/$branchId');
+      final response = await DioHelper().get(url);
       if (response.statusCode == 200 && response.data['success'] == true) {
         setState(() {
           _apiClasses = response.data['data'] ?? [];
