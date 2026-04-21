@@ -96,15 +96,46 @@ class KiotaPayConstants {
   // ---------------- Classes (GETTERS) ----------------
   static String get getClassesByBranch => '${baseUrl}classes/:branch_id';
 
-  // ---------------- My Classes Stream and Subjects (GETTERS) ----------------
+  // ---------------- My Classes Stream and Subject/Strand/Sub--strand/Activity Management (GETTERS) ----------------
   static String get getClassesStreamSubject => '${baseUrl}class/teacher';
+  static String get subjectTree => '${baseUrl}subject/tree'; // GET
+  static String get strands => '${baseUrl}subject/strands'; // POST/PUT/DELETE
+  static String get subStrands => '${baseUrl}subject/sub-strands'; // POST/PUT/DELETE
+  static String get activities => '${baseUrl}subject/activities'; // POST/PUT/DELETE
 
   // ---------------- Lesson Plan and Scheme of Work (GETTERS) ----------------
   static String get lessonPlan => '${baseUrl}lesson-plans';
   static String get schemeOfWork => '${baseUrl}scheme-of-work';
 
+  // ---------------- Formative & Summative Assessments (GETTERS) ----------------
+  static String get formativeDashboard => '${baseUrl}formative';
+  static String formativeCreateResults(int activityId) => '${baseUrl}formative/activities/$activityId/create-results';
+  static String formativeStoreResults(int activityId) => '${baseUrl}formative/activities/$activityId/store-results';
+// Summative Assessments (Exams)
+  static String get exams => '${baseUrl}exams';
+  static String examPapers(int examId) => '${baseUrl}exams/$examId/papers';
+
+  // Paper CRUD
+  static String createExamPaper(int examId) => '${baseUrl}exams/$examId/papers/create';
+  static String storeExamPaper(int examId) => '${baseUrl}exams/$examId/papers/store';
+  static String editExamPaper(int examId, int paperId) => '${baseUrl}exams/$examId/papers/$paperId/edit';
+  static String updateExamPaper(int examId, int paperId) => '${baseUrl}exams/$examId/papers/$paperId/update';
+  static String deleteExamPaper(int examId, int paperId) => '${baseUrl}exams/$examId/papers/$paperId';
+
+  // Paper Results
+  static String examPaperResults(int examId, int paperId) => '${baseUrl}exams/$examId/papers/$paperId/results';
+
+  // Assessment Reports
+  static String get reportClassStream => '${baseUrl}exams/reports/class-stream';
+  static String get reportClassExamPerformance => '${baseUrl}exams/reports/class/exam-performance';
+  static String get reportSubjectPerformance => '${baseUrl}exams/reports/subjects';
+
   // ---------------- Payroll (GETTERS) ----------------
   static String get payroll => '${baseUrl}payroll';
+  static String get payslip => '${baseUrl}/payroll/payslip/:month/:year';
+
+  // ---------------- Admission & Student (GETTERS) ----------------
+  static String get admission => '${baseUrl}admissions';
 
 static final String getHash = baseUrl + 'auth/mobile/global/hash/login';
   static final String faceIdLogin = baseUrl + 'auth/mobile/global/login';

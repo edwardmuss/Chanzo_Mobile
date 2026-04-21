@@ -2,9 +2,14 @@ import 'dart:convert';
 
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:bootstrap_icons/bootstrap_icons.dart';
+import 'package:chanzo/kiotapay_pages/assessment/formative/formative_dashboard_screen.dart';
+import 'package:chanzo/kiotapay_pages/assessment/reports/class_exam_performance_screen.dart';
+import 'package:chanzo/kiotapay_pages/assessment/reports/class_stream_performance_screen.dart';
+import 'package:chanzo/kiotapay_pages/assessment/reports/subject_performance_screen.dart';
 import 'package:chanzo/kiotapay_pages/homework/teacher_homework_screen.dart';
+import 'package:chanzo/kiotapay_pages/students/student_list_screen.dart';
 import 'package:chanzo/kiotapay_pages/teachers/scheme_of_work/scheme_of_work_screen.dart';
-import 'package:chanzo/kiotapay_pages/teachers/teacher_classes_subjects_screen.dart';
+import 'package:chanzo/kiotapay_pages/subjects/teacher_classes_subjects_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_initicon/flutter_initicon.dart';
 import 'package:get/get.dart';
@@ -30,6 +35,7 @@ import '../../globalclass/global_methods.dart';
 import '../../globalclass/kiotapay_constants.dart';
 import '../../globalclass/kiotapay_icons.dart';
 import '../Examination/performance_controller.dart';
+import '../assessment/exams/exams_dashboard_screen.dart';
 import '../attendance/class_attendance_screen.dart';
 import '../attendance/student_attendance.dart';
 import '../finance/parent_dashboard.dart';
@@ -391,6 +397,81 @@ class _KiotaPayDrawerState extends State<KiotaPayDrawer> {
               },
               icon: BootstrapIcons.people,
               label: 'My Classes & Subjects',
+            ),
+
+            TextIconButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                Get.to(() => StudentListScreen());
+              },
+              icon: BootstrapIcons.people,
+              label: 'My Students',
+            ),
+
+            Theme(
+              data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+              child: ExpansionTile(
+                leading: ClipOval(
+                  child: Container(
+                    color: defaultIconBg,
+                    width: 40,
+                    height: 40,
+                    child: Icon(Icons.assessment_outlined, size: 20, color: defaultIconColor),
+                  ),
+                ),
+                title: Text(
+                  'Assessments',
+                  style: pregular_md.copyWith(color: defaultTextColor),
+                ),
+                childrenPadding: const EdgeInsets.only(left: 56), // Indent sub-items
+                children: [
+                  ListTile(
+                    dense: true,
+                    leading: Icon(Icons.assessment_outlined, size: 20, color: defaultIconColor),
+                    title: Text('Formative Assessments', style: pregular_md.copyWith(color: defaultTextColor)),
+                    onTap: () {
+                      Navigator.pop(context); // Close Drawer
+                      Get.to(() => const FormativeDashboardScreen());
+                    },
+                  ),
+                  ListTile(
+                    dense: true,
+                    leading: Icon(Icons.school_outlined, size: 20, color: defaultIconColor),
+                    title: Text('Summative Exams', style: pregular_md.copyWith(color: defaultTextColor),),
+                    onTap: () {
+                      Navigator.pop(context); // Close Drawer
+                      Get.to(() => const ExamsDashboardScreen()); // Go to filter screen
+                    },
+                  ),
+                  ListTile(
+                    dense: true,
+                    leading: Icon(Icons.school_outlined, size: 20, color: defaultIconColor),
+                    title: Text('Class Performance', style: pregular_md.copyWith(color: defaultTextColor),),
+                    onTap: () {
+                      Navigator.pop(context); // Close Drawer
+                      Get.to(() => const ClassExamPerformanceScreen());
+                    },
+                  ),
+                  ListTile(
+                    dense: true,
+                    leading: Icon(Icons.school_outlined, size: 20, color: defaultIconColor),
+                    title: Text('Subject Performance', style: pregular_md.copyWith(color: defaultTextColor),),
+                    onTap: () {
+                      Navigator.pop(context); // Close Drawer
+                      Get.to(() => const SubjectPerformanceScreen());
+                    },
+                  ),
+                  ListTile(
+                    dense: true,
+                    leading: Icon(Icons.school_outlined, size: 20, color: defaultIconColor),
+                    title: Text('Class Stream Report', style: pregular_md.copyWith(color: defaultTextColor),),
+                    onTap: () {
+                      Navigator.pop(context); // Close Drawer
+                      Get.to(() => const ClassStreamPerformanceScreen());
+                    },
+                  ),
+                ],
+              ),
             ),
             // Add more teacher-specific quick links here
           ],

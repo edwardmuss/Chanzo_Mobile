@@ -1,12 +1,16 @@
+import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:get/get.dart' hide Response; // Hide Response to avoid conflict with Dio
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:shimmer/shimmer.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../globalclass/chanzo_color.dart';
 import '../../globalclass/kiotapay_constants.dart';
 import '../../utils/dio_helper.dart';
+import '../../utils/pdf_viewer_screen.dart'; // Make sure this path is correct
 import '../../widgets/error.dart';
 
 class PayrollScreen extends StatefulWidget {
@@ -17,8 +21,15 @@ class PayrollScreen extends StatefulWidget {
 }
 
 class _PayrollScreenState extends State<PayrollScreen> {
+  final ScrollController _scrollController = ScrollController();
+
   bool _isLoading = true;
+  bool _isLoadingMore = false;
   bool _hasError = false;
+
+  // Pagination variables
+  int _currentPage = 1;
+  int _lastPage = 1;
 
   List<dynamic> _payslips = [];
   Map<String, dynamic> _staffInfo = {};
@@ -43,40 +54,66 @@ class _PayrollScreenState extends State<PayrollScreen> {
   void initState() {
     super.initState();
     _fetchPayroll();
+    _scrollController.addListener(_scrollListener);
   }
 
-  Future<void> _fetchPayroll() async {
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollListener() {
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 100 &&
+        !_isLoadingMore &&
+        _currentPage <= _lastPage) {
+      _fetchPayroll();
+    }
+  }
+
+  Future<void> _fetchPayroll({bool refresh = false}) async {
+    if (refresh) {
+      _currentPage = 1;
+      _payslips.clear();
+    }
+
     setState(() {
-      _isLoading = true;
+      if (refresh || _payslips.isEmpty) {
+        _isLoading = true;
+      } else {
+        _isLoadingMore = true;
+      }
       _hasError = false;
     });
 
     try {
-      final Map<String, dynamic> queryParams = {};
+      final Map<String, dynamic> queryParams = {
+        'page': _currentPage, // Added Pagination Param
+      };
       if (_selectedYear != null) queryParams['year'] = _selectedYear;
       if (_selectedMonth != null) queryParams['month'] = _selectedMonth;
 
       final response = await DioHelper().get(
         KiotaPayConstants.payroll,
-        queryParameters: queryParams.isNotEmpty ? queryParams : null,
+        queryParameters: queryParams,
       );
 
       if (response.statusCode == 200 && response.data['success'] == true) {
         final filters = response.data['filters'] ?? {};
+        final pagination = response.data['pagination'] ?? {};
 
         setState(() {
           _staffInfo = response.data['staff'] ?? {};
-          _payslips = response.data['data'] ?? [];
+          _payslips.addAll(response.data['data'] ?? []); // Append new data
 
-          // Parse available years from the filters response
           if (filters['years'] != null) {
             _availableYears = List<int>.from(filters['years']);
           }
 
-          // If no year is selected yet, default to the one returned by the API
           _selectedYear ??= int.tryParse(filters['selected_year']?.toString() ?? '');
 
-          _isLoading = false;
+          _lastPage = pagination['last_page'] ?? 1;
+          _currentPage++; // Increment page for next fetch
         });
       } else {
         setState(() => _hasError = true);
@@ -84,19 +121,60 @@ class _PayrollScreenState extends State<PayrollScreen> {
     } catch (e) {
       setState(() => _hasError = true);
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _isLoadingMore = false;
+        });
+      }
     }
   }
 
-  Future<void> _openPayslip(String? urlString) async {
+  Future<void> _downloadAndOpenPayslip(String? urlString, Map<String, dynamic> payslip, {bool isDraft = false}) async {
     if (urlString == null || urlString.isEmpty) {
       Get.snackbar('Error', 'Payslip URL is not available.');
       return;
     }
 
-    final Uri url = Uri.parse(urlString);
-    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
-      Get.snackbar('Error', 'Could not open the payslip.');
+    try {
+      EasyLoading.show(status: 'Downloading PDF...');
+
+      // Use DioHelper to automatically inject your Auth Token
+      final response = await DioHelper().get(
+        urlString,
+        // Tell Dio we want the raw bytes, not JSON text!
+        options: Options(
+          responseType: ResponseType.bytes,
+          headers: {'Accept': 'application/pdf'},
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        final directory = await getTemporaryDirectory();
+
+        final monthName = _getMonthName(payslip['month']);
+        final year = payslip['year'];
+        final draftTag = isDraft ? '_DRAFT' : '_FINAL';
+        final timestamp = DateFormat('ddMMyyyy_HHmmss').format(DateTime.now());
+
+        final filename = 'PAYSLIP_${monthName}_${year}$draftTag\_$timestamp.pdf';
+        final file = File('${directory.path}/$filename');
+
+        await file.writeAsBytes(response.data, flush: true);
+
+        // Open PDF in your custom viewer
+        Get.to(() => PdfViewerScreen(
+          filePath: file.path,
+          title: "$monthName $year Payslip",
+        ));
+      } else {
+        throw Exception('Server responded with ${response.statusCode}');
+      }
+    } catch (e) {
+      EasyLoading.showError('Download failed: Please try again.');
+      debugPrint(e.toString());
+    } finally {
+      EasyLoading.dismiss();
     }
   }
 
@@ -157,7 +235,7 @@ class _PayrollScreenState extends State<PayrollScreen> {
                           _selectedYear,
                               (val) {
                             setState(() => _selectedYear = val);
-                            _fetchPayroll();
+                            _fetchPayroll(refresh: true); // Reset pagination on filter
                           }
                       ),
                     ),
@@ -169,7 +247,7 @@ class _PayrollScreenState extends State<PayrollScreen> {
                           _selectedMonth,
                               (val) {
                             setState(() => _selectedMonth = val);
-                            _fetchPayroll();
+                            _fetchPayroll(refresh: true); // Reset pagination on filter
                           }
                       ),
                     ),
@@ -187,17 +265,25 @@ class _PayrollScreenState extends State<PayrollScreen> {
                 ? ErrorWidgetUniversal(
               title: "Failed to load",
               description: "We couldn't fetch your payroll records.",
-              onRetry: _fetchPayroll,
+              onRetry: () => _fetchPayroll(refresh: true),
             )
                 : RefreshIndicator(
-              onRefresh: _fetchPayroll,
+              onRefresh: () => _fetchPayroll(refresh: true),
               color: ChanzoColors.primary,
               child: _payslips.isEmpty
                   ? _buildEmptyState(isDark)
                   : ListView.builder(
+                controller: _scrollController,
                 padding: const EdgeInsets.all(16),
-                itemCount: _payslips.length,
+                itemCount: _payslips.length + (_isLoadingMore ? 1 : 0),
                 itemBuilder: (context, index) {
+                  if (index == _payslips.length) {
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16.0),
+                      child: Center(child: CircularProgressIndicator()),
+                    );
+                  }
+
                   final payslip = _payslips[index];
                   return _buildPayslipCard(payslip, isDark);
                 },
@@ -245,8 +331,8 @@ class _PayrollScreenState extends State<PayrollScreen> {
     final monthName = _getMonthName(payslip['month']);
     final netSalary = double.tryParse(payslip['net_salary']?.toString() ?? '0') ?? 0.0;
 
-    final bool hasDraft = payslip['draft_available'] == true;
-    final bool hasFinal = payslip['final_available'] == true;
+    final bool hasDraft = payslip['draft_available'] == true && payslip['draft_url'] != null && payslip['payslip_type'] == 'draft_payslip';
+    final bool hasFinal = payslip['final_available'] == true && payslip['final_url'] != null && payslip['payslip_type'] == 'final_payslip';
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -327,7 +413,7 @@ class _PayrollScreenState extends State<PayrollScreen> {
                 if (hasDraft)
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: () => _openPayslip(payslip['draft_url']),
+                      onPressed: () => _downloadAndOpenPayslip(payslip['draft_url'], payslip, isDraft: true),
                       icon: const Icon(Icons.description_outlined, size: 18),
                       label: const Text("Draft"),
                       style: OutlinedButton.styleFrom(
@@ -341,7 +427,7 @@ class _PayrollScreenState extends State<PayrollScreen> {
                 if (hasFinal)
                   Expanded(
                     child: ElevatedButton.icon(
-                      onPressed: () => _openPayslip(payslip['final_url']),
+                      onPressed: () => _downloadAndOpenPayslip(payslip['final_url'], payslip, isDraft: false),
                       icon: const Icon(Icons.download, size: 18),
                       label: const Text("Final Payslip"),
                       style: ElevatedButton.styleFrom(

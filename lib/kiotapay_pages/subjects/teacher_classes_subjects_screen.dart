@@ -1,3 +1,5 @@
+import 'package:chanzo/globalclass/global_methods.dart';
+import 'package:chanzo/kiotapay_pages/subjects/manage_subject_screen.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -7,6 +9,7 @@ import '../../globalclass/chanzo_color.dart';
 import '../../globalclass/kiotapay_constants.dart';
 import '../../utils/dio_helper.dart';
 import '../../widgets/error.dart';
+import '../kiotapay_authentication/AuthController.dart'; // Ensure this is imported
 
 class TeacherClassesSubjectsScreen extends StatefulWidget {
   const TeacherClassesSubjectsScreen({super.key});
@@ -16,13 +19,19 @@ class TeacherClassesSubjectsScreen extends StatefulWidget {
 }
 
 class _TeacherClassesSubjectsScreenState extends State<TeacherClassesSubjectsScreen> {
+  // Initialize your AuthController to access the school/curriculum details safely
+  final AuthController authController = Get.find<AuthController>();
+
   bool _isLoading = true;
   bool _hasError = false;
   List<dynamic> _assignments = [];
+  int? _curriculumId;
 
   @override
   void initState() {
     super.initState();
+    // Safely extract the curriculum ID once during init
+    _curriculumId = authController.school['curriculum_id'];
     _fetchAssignments();
   }
 
@@ -128,14 +137,24 @@ class _TeacherClassesSubjectsScreenState extends State<TeacherClassesSubjectsScr
   }
 
   Widget _buildAssignmentCard(Map<String, dynamic> assignment) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final classId = assignment['class_id'];
     final className = assignment['class_name'] ?? 'Unknown Class';
     final streamName = assignment['stream_name'] ?? 'Unknown Stream';
     final subjects = (assignment['subjects'] as List<dynamic>?) ?? [];
 
+    // Check if the curriculum is 1
+    final bool isCBC = _curriculumId == 1;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: isDark ? 0 : 2,
+      color: isDark ? Theme.of(context).cardColor : Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: isDark ? Colors.grey.shade800 : Colors.transparent),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -169,7 +188,7 @@ class _TeacherClassesSubjectsScreenState extends State<TeacherClassesSubjectsScr
                         "${subjects.length} Subjects Assigned",
                         style: TextStyle(
                           fontSize: 13,
-                          color: Colors.grey.shade600,
+                          color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -179,7 +198,7 @@ class _TeacherClassesSubjectsScreenState extends State<TeacherClassesSubjectsScr
               ],
             ),
             const SizedBox(height: 16),
-            const Divider(height: 1),
+            Divider(height: 1, color: isDark ? Colors.grey.shade800 : Colors.grey.shade200),
             const SizedBox(height: 16),
 
             // Subjects List (Wrap for chips)
@@ -191,27 +210,53 @@ class _TeacherClassesSubjectsScreenState extends State<TeacherClassesSubjectsScr
                 runSpacing: 8,
                 children: subjects.map((subject) {
                   final subjectName = subject['subject_name'] ?? 'Unknown Subject';
-                  return Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade50,
-                      border: Border.all(color: Colors.grey.shade200),
+                  final subjectId = subject['subject_id'];
+
+                  return Material(
+                    color: Colors.transparent,
+                    child: InkWell(
                       borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.book_outlined, size: 14, color: ChanzoColors.secondary),
-                        const SizedBox(width: 6),
-                        Text(
-                          subjectName,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey.shade800,
+                      // Only allow tapping if curriculum_id is 1
+                      onTap: isCBC ? () {
+                        // TODO: Navigate to the Curriculum Management Screen for this specific subject
+                        Get.to(() => ManageSubjectScreen(
+                          classId: classId,
+                          subjectId: subjectId,
+                          subjectName: subjectName,
+                        ));
+                      } : null,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.grey.shade900 : Colors.grey.shade50,
+                          border: Border.all(
+                              color: isCBC
+                                  ? ChanzoColors.primary.withOpacity(0.5) // Highlight border if clickable
+                                  : (isDark ? Colors.grey.shade700 : Colors.grey.shade200)
                           ),
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                      ],
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.book_outlined, size: 14, color: ChanzoColors.secondary),
+                            const SizedBox(width: 6),
+                            Text(
+                              subjectName,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: isDark ? Colors.white : Colors.grey.shade800,
+                              ),
+                            ),
+                            // Show a tiny gear/edit icon so the teacher knows they can click it
+                            if (isCBC) ...[
+                              const SizedBox(width: 6),
+                              Icon(Icons.settings_suggest, size: 14, color: ChanzoColors.primary.withOpacity(0.8)),
+                            ]
+                          ],
+                        ),
+                      ),
                     ),
                   );
                 }).toList(),
@@ -223,18 +268,20 @@ class _TeacherClassesSubjectsScreenState extends State<TeacherClassesSubjectsScr
   }
 
   Widget _buildShimmerLoader() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: 4,
       itemBuilder: (_, __) => Padding(
         padding: const EdgeInsets.only(bottom: 16),
         child: Shimmer.fromColors(
-          baseColor: Colors.grey[300]!,
-          highlightColor: Colors.grey[100]!,
+          baseColor: isDark ? Colors.grey.shade800 : Colors.grey.shade300,
+          highlightColor: isDark ? Colors.grey.shade700 : Colors.grey.shade100,
           child: Container(
             height: 140,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: isDark ? Colors.grey.shade900 : Colors.white,
               borderRadius: BorderRadius.circular(16),
             ),
           ),

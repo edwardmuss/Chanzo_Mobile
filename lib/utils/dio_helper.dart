@@ -20,7 +20,7 @@ class DioHelper {
       'Accept': 'application/json',
     };
 
-    // ✅ Add interceptors
+    // Add interceptors
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
@@ -56,26 +56,26 @@ class DioHelper {
   }
 
   Future<Response> get(String path,
-      {Map<String, dynamic>? queryParameters}) async {
+      {Map<String, dynamic>? queryParameters, Options? options}) async {
     await setAuthHeader();
-    return dio.get(path, queryParameters: queryParameters);
+    return dio.get(path, queryParameters: queryParameters, options: options);
   }
 
   Future<Response> post(String path,
-      {dynamic data, Map<String, dynamic>? queryParameters}) async {
+      {dynamic data, Map<String, dynamic>? queryParameters, Options? options}) async {
     await setAuthHeader();
-    return dio.post(path, data: data, queryParameters: queryParameters);
+    return dio.post(path, data: data, queryParameters: queryParameters, options: options);
   }
 
   Future<Response> put(String path,
-      {dynamic data, Map<String, dynamic>? queryParameters}) async {
+      {dynamic data, Map<String, dynamic>? queryParameters, Options? options}) async {
     await setAuthHeader();
-    return dio.put(path, data: data, queryParameters: queryParameters);
+    return dio.put(path, data: data, queryParameters: queryParameters, options: options);
   }
 
   Future<Response> delete(String path,
-      {dynamic data, Map<String, dynamic>? queryParameters}) async {
+      {dynamic data, Map<String, dynamic>? queryParameters, Options? options}) async {
     await setAuthHeader();
-    return dio.delete(path, data: data, queryParameters: queryParameters);
+    return dio.delete(path, data: data, queryParameters: queryParameters, options: options);
   }
 }

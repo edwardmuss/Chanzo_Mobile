@@ -13,7 +13,7 @@ import 'package:chanzo/kiotapay_pages/kiotapay_home/kiotapay_home.dart';
 import 'package:chanzo/kiotapay_pages/kiotapay_settings/kiotapay_settings.dart';
 import 'package:chanzo/kiotapay_pages/kiotapay_statistics/kiotapay_statistics.dart';
 import 'package:chanzo/kiotapay_pages/payroll/payroll_screen.dart';
-import 'package:chanzo/kiotapay_pages/teachers/teacher_classes_subjects_screen.dart';
+import 'package:chanzo/kiotapay_pages/subjects/teacher_classes_subjects_screen.dart';
 import 'package:chanzo/kiotapay_pages/timetable/timetable_screen.dart';
 import 'package:chanzo/kiotapay_theme/kiotapay_themecontroller.dart';
 import 'package:flutter/material.dart';
