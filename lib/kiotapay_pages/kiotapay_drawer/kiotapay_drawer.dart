@@ -409,8 +409,16 @@ class _KiotaPayDrawerState extends State<KiotaPayDrawer> {
             ),
 
             Theme(
-              data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+              data: Theme.of(context).copyWith(
+                dividerTheme: const DividerThemeData(
+                  thickness: 0.5,
+                  space: 0, // removes extra spacing
+                ),
+              ),
               child: ExpansionTile(
+                shape: Border(),              // removes top/bottom border
+                collapsedShape: Border(),     // removes collapsed border
+                // tilePadding: EdgeInsets.zero, // prevents double padding
                 leading: ClipOval(
                   child: Container(
                     color: defaultIconBg,
@@ -419,60 +427,48 @@ class _KiotaPayDrawerState extends State<KiotaPayDrawer> {
                     child: Icon(Icons.assessment_outlined, size: 20, color: defaultIconColor),
                   ),
                 ),
-                title: Text(
-                  'Assessments',
-                  style: pregular_md.copyWith(color: defaultTextColor),
-                ),
-                childrenPadding: const EdgeInsets.only(left: 56), // Indent sub-items
+                title: Text('Assessments', style: pregular_md.copyWith(color: defaultTextColor)),
+                childrenPadding: const EdgeInsets.only(left: 16),
                 children: [
-                  ListTile(
-                    dense: true,
-                    leading: Icon(Icons.assessment_outlined, size: 20, color: defaultIconColor),
-                    title: Text('Formative Assessments', style: pregular_md.copyWith(color: defaultTextColor)),
-                    onTap: () {
-                      Navigator.pop(context); // Close Drawer
-                      Get.to(() => const FormativeDashboardScreen());
-                    },
+              
+                  /// --- Assessment Types ---
+                  ExpansionTile(
+                    title: Text('Assessment Types', style: pregular_md.copyWith(color: defaultTextColor)),
+                    childrenPadding: const EdgeInsets.only(left: 40),
+                    children: [
+                      ListTile(
+                        title: Text('Formative Assessments', style: pregular_md.copyWith(color: defaultTextColor)),
+                        onTap: () => Get.to(() => const FormativeDashboardScreen()),
+                      ),
+                      ListTile(
+                        title: Text('Summative Exams', style: pregular_md.copyWith(color: defaultTextColor)),
+                        onTap: () => Get.to(() => const ExamsDashboardScreen()),
+                      ),
+                    ],
                   ),
-                  ListTile(
-                    dense: true,
-                    leading: Icon(Icons.school_outlined, size: 20, color: defaultIconColor),
-                    title: Text('Summative Exams', style: pregular_md.copyWith(color: defaultTextColor),),
-                    onTap: () {
-                      Navigator.pop(context); // Close Drawer
-                      Get.to(() => const ExamsDashboardScreen()); // Go to filter screen
-                    },
-                  ),
-                  ListTile(
-                    dense: true,
-                    leading: Icon(Icons.school_outlined, size: 20, color: defaultIconColor),
-                    title: Text('Class Performance', style: pregular_md.copyWith(color: defaultTextColor),),
-                    onTap: () {
-                      Navigator.pop(context); // Close Drawer
-                      Get.to(() => const ClassExamPerformanceScreen());
-                    },
-                  ),
-                  ListTile(
-                    dense: true,
-                    leading: Icon(Icons.school_outlined, size: 20, color: defaultIconColor),
-                    title: Text('Subject Performance', style: pregular_md.copyWith(color: defaultTextColor),),
-                    onTap: () {
-                      Navigator.pop(context); // Close Drawer
-                      Get.to(() => const SubjectPerformanceScreen());
-                    },
-                  ),
-                  ListTile(
-                    dense: true,
-                    leading: Icon(Icons.school_outlined, size: 20, color: defaultIconColor),
-                    title: Text('Class Stream Report', style: pregular_md.copyWith(color: defaultTextColor),),
-                    onTap: () {
-                      Navigator.pop(context); // Close Drawer
-                      Get.to(() => const ClassStreamPerformanceScreen());
-                    },
+              
+                  /// --- Performance Reports ---
+                  ExpansionTile(
+                    title: Text('Performance Reports', style: pregular_md.copyWith(color: defaultTextColor)),
+                    childrenPadding: const EdgeInsets.only(left: 40),
+                    children: [
+                      ListTile(
+                        title: Text('Class Performance', style: pregular_md.copyWith(color: defaultTextColor)),
+                        onTap: () => Get.to(() => const ClassExamPerformanceScreen()),
+                      ),
+                      ListTile(
+                        title: Text('Subject Performance', style: pregular_md.copyWith(color: defaultTextColor)),
+                        onTap: () => Get.to(() => const SubjectPerformanceScreen()),
+                      ),
+                      ListTile(
+                        title: Text('Class Stream Report', style: pregular_md.copyWith(color: defaultTextColor)),
+                        onTap: () => Get.to(() => const ClassStreamPerformanceScreen()),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ),
+            )
             // Add more teacher-specific quick links here
           ],
 
