@@ -1,4 +1,4 @@
-# KiotaPay-FMS
+# Chanzo App
 
 A new Flutter project.
 
