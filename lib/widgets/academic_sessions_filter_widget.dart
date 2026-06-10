@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../kiotapay_pages/academic_sessions/filter_controller.dart';
-import '../kiotapay_pages/academic_sessions/student_academic_session_model.dart';
+import '../pages/academic_sessions/filter_controller.dart';
+import '../pages/academic_sessions/student_academic_session_model.dart';
 
 class AcademicFilterWidget extends StatelessWidget {
   final FilterController controller = Get.find<FilterController>();

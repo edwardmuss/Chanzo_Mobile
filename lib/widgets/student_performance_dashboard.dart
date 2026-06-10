@@ -6,8 +6,8 @@ import 'package:get/get.dart';
 import 'package:chanzo/globalclass/chanzo_color.dart';
 import 'package:shimmer/shimmer.dart';
 
-import '../globalclass/kiotapay_fontstyle.dart';
-import '../kiotapay_pages/Examination/performance_controller.dart';
+import '../globalclass/fontstyle.dart';
+import '../pages/Examination/performance_controller.dart';
 
 class StudentPerformanceDashboard {
   final PerformanceController ctrl = Get.find<PerformanceController>();

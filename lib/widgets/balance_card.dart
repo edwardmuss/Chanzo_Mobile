@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../globalclass/chanzo_color.dart';
-import '../globalclass/kiotapay_fontstyle.dart';
+import '../globalclass/fontstyle.dart';
 
 class BalanceCard extends StatelessWidget {
   final String title;

@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-import '../globalclass/kiotapay_constants.dart';
+import '../globalclass/constants.dart';
 
 class DioHelper {
   static final DioHelper _instance = DioHelper._internal();

@@ -1,0 +1,249 @@
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+import 'AppEnv.dart';
+
+class KiotaPayConstants {
+  static const _secure = FlutterSecureStorage();
+
+  static final String currency = "KES ";
+  static final bool isLive = true;
+
+  /// Mutable baseUrl (changes when country changes)
+  static String baseUrl = isLive
+      ? 'https://app.chanzo.co.ke/api/v1/'
+      : 'https://antelope-refined-nicely.ngrok-free.app/api/v1/';
+
+  /// Always derived from baseUrl
+  static String get webUrl => baseUrl.replaceAll(RegExp(r'api/v1/$'), '');
+  static String get fileBaseUrl => '${webUrl}storage/';
+
+  /// AI base (if also country-based later, make it dynamic too)
+  static String aiUrl = 'https://ai.chanzo.co.ke/api/v1/';
+
+  // ---------------- AI Endpoints (GETTERS) ----------------
+  static String get fetchSessions => '${baseUrl}chat/sessions?limit=10';
+  static String get loadMessagesFromSession => '${baseUrl}chat/sessions';
+  static String get aiStream => '${baseUrl}chat/stream';
+
+  // ---------------- Authentication (GETTERS) ----------------
+  static String get login => '${baseUrl}auth/login';
+  static String get getUserProfile => '${baseUrl}auth/profile';
+  static String get logout => '${baseUrl}auth/logout';
+  static String get forgotPassword => '${baseUrl}auth/forgot-password';
+  static String get changePassword => '${baseUrl}auth/change-password';
+  static String get changePasswordNewUser => '${baseUrl}auth/change-password/new-user';
+  static String get verifyUserPassword => '${baseUrl}auth/verify-user-password';
+  static final String resetPasswordWithOTP = '${baseUrl}auth/reset-password-with-otp';
+  static String get contextGet => '${baseUrl}auth/context';
+  static String get contextSwitch => '${baseUrl}auth/context/switch';
+
+  // ---------------- Examination (GETTERS) ----------------
+  static String get teachersDashboard => '${baseUrl}dashboard/teacher';
+
+  // ---------------- Finance and Fee Management (GETTERS) ----------------
+  static String get getStudentFee => '${baseUrl}fees/student';
+  static String get getStudentFeePdf => '${baseUrl}fees/structure/generate';
+  static String get getStudentFeeReceiptPdf => '${baseUrl}fees/structure/generate/receipt';
+  static String get getRecentPayments => '${baseUrl}fees/student-payments/{student_id}';
+  static String get getRecentYearlyPayments => '${baseUrl}fees/student-payments/monthly/{student_id}';
+  static String get getPaymentsMethods => '${baseUrl}fees/payment-settings';
+  static String get kcbStkPush => '${baseUrl}fees/payments/buni-stk-push-initiate';
+  static String get mpesaPaybillStkPush => '${baseUrl}fees/payments/top-up/mpesa';
+  static String get stkPushStatus => '${baseUrl}fees/payments/check-transaction-status';
+
+  // ---------------- Timetable (GETTERS) ----------------
+  static String get getStudentTimetable => '${baseUrl}timetable/student';
+  static String get getTeacherTimetable => '${baseUrl}timetable/teacher';
+
+  // ---------------- Attendance (GETTERS) ----------------
+  static String get getStudentAttendance => '${baseUrl}attendance/student';
+  static String get getClassAttendance => '${baseUrl}attendance/class';
+  static String get storeClassAttendance => '${baseUrl}attendance';
+
+  // ---------------- Resource Center (GETTERS) ----------------
+  static String get resourceCenter => '${baseUrl}resource-center';
+
+  // ---------------- Resource Types (GETTERS) ----------------
+  static String get getResourceTypesByBranch => '${baseUrl}resource-types/:branch_id';
+
+  // ---------------- Homework (GETTERS) ----------------
+  static String get getStudentHomeWork => '${baseUrl}homework';
+  static String get getTeacherHomeWork => '${baseUrl}homework/teacher';
+  static String get getTeacherSubjects => '${baseUrl}homework/teacher/subjects';
+  static String get getStudentHomeWorkSubmissions => '${baseUrl}homework-submissions/:homeworkId';
+  static String get evaluateStudentHomeWorkSubmissions => '${baseUrl}homework-submissions/:submissionId/evaluate';
+  static String get submitStudentHomeWork => '${baseUrl}homework/submit/:homeworkId';
+  static String get addEditHomeWork => '${baseUrl}homework';
+
+  // ---------------- Notice Board (GETTERS) ----------------
+  static String get getNotices => '${baseUrl}notice-board';
+
+  // ---------------- Calendar (GETTERS) ----------------
+  static String get getCalendar => '${baseUrl}calendar';
+
+  // ---------------- Notifications (GETTERS) ----------------
+  static String get getNotifications => '${baseUrl}notifications';
+  static String get sendNotificationTokens => '${baseUrl}notifications/device-tokens/send';
+
+  // ---------------- Examination (GETTERS) ----------------
+  static String get getStudentPerformance => '${baseUrl}exams/student-exam-performance';
+  static String get getStudentExamTrend => '${baseUrl}exams/student-exam-trend';
+  static String get getStudentExamReport => '${baseUrl}exams/reports/:student_id';
+
+  // ---------------- Academic Sessions (GETTERS) ----------------
+  static String get getAllAcademicSessionsByBranch => '${baseUrl}academic-sessions/:branch_id/branch';
+  static String get getStudentAcademicSessions => '${baseUrl}academic-sessions/:student_id/student';
+
+  // ---------------- Classes (GETTERS) ----------------
+  static String get getClassesByBranch => '${baseUrl}classes/:branch_id';
+
+  // ---------------- My Classes Stream and Subject/Strand/Sub--strand/Activity Management (GETTERS) ----------------
+  static String get getClassesStreamSubject => '${baseUrl}class/teacher';
+  static String get subjectTree => '${baseUrl}subject/tree'; // GET
+  static String get strands => '${baseUrl}subject/strands'; // POST/PUT/DELETE
+  static String get subStrands => '${baseUrl}subject/sub-strands'; // POST/PUT/DELETE
+  static String get activities => '${baseUrl}subject/activities'; // POST/PUT/DELETE
+
+  // ---------------- Lesson Plan and Scheme of Work (GETTERS) ----------------
+  static String get lessonPlan => '${baseUrl}lesson-plans';
+  static String get schemeOfWork => '${baseUrl}scheme-of-work';
+
+  // ---------------- Formative & Summative Assessments (GETTERS) ----------------
+  static String get formativeDashboard => '${baseUrl}formative';
+  static String formativeCreateResults(int activityId) => '${baseUrl}formative/activities/$activityId/create-results';
+  static String formativeStoreResults(int activityId) => '${baseUrl}formative/activities/$activityId/store-results';
+// Summative Assessments (Exams)
+  static String get exams => '${baseUrl}exams';
+  static String examPapers(int examId) => '${baseUrl}exams/$examId/papers';
+
+  // Paper CRUD
+  static String createExamPaper(int examId) => '${baseUrl}exams/$examId/papers/create';
+  static String storeExamPaper(int examId) => '${baseUrl}exams/$examId/papers/store';
+  static String editExamPaper(int examId, int paperId) => '${baseUrl}exams/$examId/papers/$paperId/edit';
+  static String updateExamPaper(int examId, int paperId) => '${baseUrl}exams/$examId/papers/$paperId/update';
+  static String deleteExamPaper(int examId, int paperId) => '${baseUrl}exams/$examId/papers/$paperId';
+
+  // Paper Results
+  static String examPaperResults(int examId, int paperId) => '${baseUrl}exams/$examId/papers/$paperId/results';
+
+  // Assessment Reports
+  static String get reportClassStream => '${baseUrl}exams/reports/class-stream';
+  static String get reportClassExamPerformance => '${baseUrl}exams/reports/class/exam-performance';
+  static String get reportSubjectPerformance => '${baseUrl}exams/reports/subjects';
+
+  // ---------------- Payroll (GETTERS) ----------------
+  static String get payroll => '${baseUrl}payroll';
+  static String get payslip => '${baseUrl}/payroll/payslip/:month/:year';
+
+  // ---------------- Admission & Student (GETTERS) ----------------
+  static String get admission => '${baseUrl}admissions';
+
+static final String getHash = baseUrl + 'auth/mobile/global/hash/login';
+  static final String faceIdLogin = baseUrl + 'auth/mobile/global/login';
+  static final String multiAccountLogin =
+      baseUrl + 'auth/multi-account/mobile/login';
+  static final String getUserAccounts = baseUrl + 'auth/multi-account/accounts';
+  static final String switchUserAccounts =
+      baseUrl + 'auth/multi-account/switch/mobile';
+  static final String updateProfile = baseUrl + 'subusers/single/update';
+  static final String verifyCode = baseUrl + 'subusers/verify/code';
+  static final String selfOnboard = baseUrl + 'subusers/self/onboard';
+  static final String refreshToken = baseUrl + 'auth/token/refresh';
+  static final String checkUserHasPin = baseUrl + 'auth/pin-present';
+  static final String createUserPin = baseUrl + 'auth/create-mobile/pin';
+  static final String forgotUserPin = baseUrl + 'auth/forgot-pin';
+  static final String verifyUserPin = baseUrl + 'auth/verify/pin';
+  static final String resetUserPin = baseUrl + 'auth/reset-mobile/pin';
+  static final String generateForgotPasswordOtp =
+      baseUrl + 'user/forgot-password/mobile';
+  static final String confirmPasswordOtp =
+      baseUrl + 'user/confirm/forgot-password/mobile';
+  static final String userWallet = baseUrl + 'user/wallet';
+  static final String orgWallet = baseUrl + 'organisation/wallet/balance';
+  static final String orgWalletStats = baseUrl + 'organisation/wallet/balance';
+  static final String getTransactionCost =
+      baseUrl + 'allocations/verify-spending-amount';
+  static final String initiatePayout = baseUrl + 'payouts/initiate/mobile';
+  static final String getRecentTransactions = baseUrl + 'payouts/transactions';
+  static final String pinVerifyTransactions =
+      baseUrl + 'payouts/transaction/mobile-pin/verify';
+  static final String pinVerifyAirtime =
+      baseUrl + 'airtime/transaction/mobile-pin/verify';
+  static final String biometricVerifyTransactions =
+      baseUrl + 'payouts/transaction/mobile-fingerprint/verify';
+  static final String biometricVerifyAirtime =
+      baseUrl + 'airtime/transaction/mobile-fingerprint/verify';
+  static final String reVerifyTransactions =
+      baseUrl + 'payouts/transaction/reverify/mobile';
+  static final String reverseTransactions =
+      baseUrl + 'payouts/transaction/single/reverse';
+  static final String uploadReceipt = baseUrl + 'payouts/receipt/upload';
+  static final String updateReceipt = baseUrl + 'payouts/receipt/update/upload';
+  static final String initiateTransactionRequest = baseUrl + 'transaction-request/new/request/mobile';
+  static final String verifyTransactionRequestPin = baseUrl + 'transaction-request/new/request/verify';
+  static final String transactionRequestAll = baseUrl + 'transaction-request/all';
+  static final String transactionRequestSingle = baseUrl + 'transaction-request/single';
+  static final String approveTransactionRequestSingle = baseUrl + 'transaction-request/approve/single';
+  static final String disApproveTransactionRequestSingle = baseUrl + 'transaction-request/disapprove/single';
+  static final String viewReceipt =
+      baseUrl + 'payouts/receipt/transaction/single';
+  static final String allocationRequestAll = baseUrl + 'allocations/request/type/all';
+  static final String getAllCurrentUserTransactions =
+      baseUrl + 'payouts/transactions/current-user/all/mobile';
+  static final String getSingleTransaction =
+      baseUrl + 'payouts/transaction/single';
+  static final String Airtime = baseUrl + 'airtime/at/request';
+  static final String getAllBanks = baseUrl + 'transactions/banks';
+  static final String requestMyAllocation = baseUrl + 'allocations/request/new';
+  static final String requestAllocationForOther = baseUrl + 'allocations/request/another-individual';
+  static final String getSingleAllocation = baseUrl + 'allocations/request/single';
+  static final String getAllTeams = baseUrl + 'team/all';
+  static final String getApprover = baseUrl + 'transaction-request/approvers/all';
+  static final String getAllocationApprover = baseUrl + 'api/v1/allocations/request/approvers/all';
+  static final String approveSingleAllocation = baseUrl + 'allocations/request/approve';
+  static final String disapproveSingleAllocation = baseUrl + 'allocations/request/disapprove';
+  static final String getCurrentUser2TeamProjects =
+      baseUrl + 'team/projects/all';
+  static final String addTeam = baseUrl + 'team/add';
+  static final String updateTeam = baseUrl + 'team/update';
+  static final String updateTeamLimit = baseUrl + 'team/update-limit';
+  static final String allocateMemberMoney = baseUrl + 'allocations/new';
+  static final String deAllocateMemberMoney =
+      baseUrl + 'allocations/de-allocate';
+  static final String deleteTeam = baseUrl + 'team/delete';
+  static final String getProjects = baseUrl + 'projects/all';
+  static final String addProject = baseUrl + 'projects/add';
+  static final String updateProject = baseUrl + 'projects/update';
+  static final String updateStatusProject = baseUrl + 'projects/update/status';
+  static final String deleteProject = baseUrl + 'projects/delete';
+  static final String getAllCategories = baseUrl + 'category/all';
+  static final String getSingleCategories = baseUrl + 'category/single';
+  static final String addCategories = baseUrl + 'category/new';
+  static final String updateCategories = baseUrl + 'category/update';
+  static final String addSubCategories = baseUrl + 'category/subcategory/new';
+  static final String updateSubCategories =
+      baseUrl + 'category/subcategory/update';
+  static final String deleteCategories = baseUrl + 'category/delete';
+  static final String deleteSubCategories =
+      baseUrl + 'category/subcategory/delete';
+  static final String getFavorites = baseUrl + 'favourites/type/all';
+  static final String getAllFavorites = baseUrl + 'favourites/all';
+  static final String addFavorites = baseUrl + 'favourites/add';
+  static final String updateFavorites = baseUrl + 'favourites/update';
+  static final String deleteFavorites = baseUrl + 'favourites/delete';
+  static final String loadDetails =
+      baseUrl + 'organisation/company/load-details';
+
+  // ---------------- Country helpers ----------------
+  static Future<void> setCountry(String code) async {
+    final url = AppEnv.baseUrls[code] ?? AppEnv.baseUrls[AppEnv.defaultCountry]!;
+    baseUrl = url;
+    await _secure.write(key: AppEnv.storageKeyCountry, value: code);
+  }
+
+  static Future<void> ensureCountryLoaded() async {
+    final saved = await _secure.read(key: AppEnv.storageKeyCountry);
+    final code = saved ?? AppEnv.defaultCountry;
+    baseUrl = AppEnv.baseUrls[code] ?? AppEnv.baseUrls[AppEnv.defaultCountry]!;
+  }
+}

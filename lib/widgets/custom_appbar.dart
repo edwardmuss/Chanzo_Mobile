@@ -3,15 +3,15 @@ import 'package:bootstrap_icons/bootstrap_icons.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:get/get.dart';
 import 'package:chanzo/globalclass/chanzo_color.dart';
-import 'package:chanzo/globalclass/kiotapay_fontstyle.dart';
-import 'package:chanzo/globalclass/kiotapay_global_classes.dart';
-import 'package:chanzo/kiotapay_pages/notifications/notification_screen.dart';
+import 'package:chanzo/globalclass/fontstyle.dart';
+import 'package:chanzo/globalclass/global_classes.dart';
+import 'package:chanzo/pages/notifications/notification_screen.dart';
 import 'package:provider/provider.dart';
 
-import '../globalclass/kiotapay_constants.dart';
+import '../globalclass/constants.dart';
 import '../globalclass/kiotapay_icons.dart';
-import '../kiotapay_pages/kiotapay_authentication/AuthController.dart';
-import '../kiotapay_pages/notifications/notification_provider.dart';
+import '../pages/authentication/AuthController.dart';
+import '../pages/notifications/notification_provider.dart';
 
 class KiotaPayAppBar extends StatelessWidget implements PreferredSizeWidget {
   final GlobalKey<ScaffoldState> scaffoldKey;

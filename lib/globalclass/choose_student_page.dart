@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:chanzo/kiotapay_pages/kiotapay_dahsboard/kiotapay_dahsboard.dart';
+import 'package:chanzo/pages/dahsboard/dahsboard.dart';
 
-import '../kiotapay_pages/kiotapay_authentication/AuthController.dart';
+import '../pages/authentication/AuthController.dart';
 import 'chanzo_color.dart';
-import 'kiotapay_constants.dart';
+import 'constants.dart';
 import 'kiotapay_icons.dart';
 
 class ChooseStudentPage extends StatelessWidget {

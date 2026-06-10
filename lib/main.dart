@@ -1,12 +1,13 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:in_app_idle_detector/in_app_idle_detector.dart';
-import 'package:chanzo/kiotapay_pages/kiotapay_authentication/kiotapay_splash.dart';
-import 'package:chanzo/kiotapay_theme/kiotapay_theme.dart';
-import 'package:chanzo/kiotapay_theme/kiotapay_themecontroller.dart';
-import 'package:chanzo/kiotapay_translation/stringtranslation.dart';
+import 'package:chanzo/pages/authentication/splash.dart';
+import 'package:chanzo/theme/theme.dart';
+import 'package:chanzo/theme/theme_controller.dart';
+import 'package:chanzo/translation/stringtranslation.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../kiotapay_pages/kiotapay_authentication/AuthController.dart';
+import '../pages/authentication/AuthController.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -16,15 +17,22 @@ import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 // import 'adapters/payment_adapter2.dart';
+import 'firebase_options.dart';
 import 'globalclass/biometric_auth.dart';
 import 'globalclass/chanzo_color.dart';
-import 'globalclass/kiotapay_constants.dart';
-import 'kiotapay_pages/notifications/notification_provider.dart';
-import 'kiotapay_pages/notifications/notification_service.dart';
+import 'globalclass/constants.dart';
+import 'pages/notifications/notification_provider.dart';
+import 'pages/notifications/notification_service.dart';
 import 'models/payment_model.dart';
 
 late Box<Payment> paymentBox;
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+  print("Handling a background message: ${message.messageId}");
+}
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,13 +41,16 @@ Future<void> main() async {
   final idleStatus = InAppIdleDetector.isIdle;
   final userId = prefs.getString('uuid');
 
-  // Initialize Firebase
-  // await Firebase.initializeApp(
-  //     // options: DefaultFirebaseOptions.currentPlatform,
-  //     );
+  // INITIALIZE FIREBASE
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
-  // Initialize notifications
-  // await NotificationService.initialize();
+  // REGISTER NOTIFICATION BACKGROUND HANDLER
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+  // NOTIFICATION SERVICE
+  await NotificationService.initialize();
 
   // SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
 // Initialize ObjectBox
@@ -178,7 +189,7 @@ class _MyAppState extends State<MyApp> {
           locale: const Locale('en', 'US'),
           builder: EasyLoading.init(),
           navigatorKey: navigatorKey,
-          home: const KiotaPaySplash(),
+          home: const Splash(),
         ));
   }
 }

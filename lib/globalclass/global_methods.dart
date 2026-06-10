@@ -18,14 +18,15 @@ import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../kiotapay_pages/kiotapay_authentication/AuthController.dart';
-import '../kiotapay_pages/kiotapay_authentication/BranchContext.dart';
-import '../kiotapay_pages/kiotapay_authentication/kiotapay_signin.dart';
+import '../pages/authentication/AuthController.dart';
+import '../pages/authentication/BranchContext.dart';
+import '../pages/authentication/sign_in.dart';
 import 'dart:typed_data';
 
 // import 'package:pointycastle/export.dart';
+import '../pages/dahsboard/dahsboard.dart';
 import '../utils/pdf_viewer_screen.dart';
-import 'kiotapay_constants.dart';
+import 'constants.dart';
 import 'package:encrypt/encrypt.dart' as encrypt;
 
 import 'kiotapay_icons.dart';
@@ -207,7 +208,7 @@ Future<void> forceLogout() async {
   authController.setSelectedStudent({});
 
   // Navigate to login screen
-  Get.offAll(() => KiotaPaySignIn());
+  Get.offAll(() => SignIn());
   print('Session expired, logged out');
 }
 
@@ -581,42 +582,38 @@ Future<void> openContextSwitcher(
     isLoading.value = true;
 
     try {
-      final updated =
-          await auth.switchContextOnServer(branchId: branchId, role: role);
+      final updated = await auth.switchContextOnServer(branchId: branchId, role: role);
       final d = Map<String, dynamic>.from(updated['data'] ?? {});
 
       if (d['current_context'] != null) {
-        auth.activeContext.value = ActiveContext.fromJson(
-            Map<String, dynamic>.from(d['current_context']));
+        auth.activeContext.value = ActiveContext.fromJson(Map<String, dynamic>.from(d['current_context']));
       } else {
-        auth.activeContext.value = ActiveContext(
-            branchId: branchId, role: role, branchName: branchName);
+        auth.activeContext.value = ActiveContext(branchId: branchId, role: role, branchName: branchName);
       }
 
-      if (d['school'] != null)
-        auth.setSchool(Map<String, dynamic>.from(d['school']));
+      if (d['school'] != null) auth.setSchool(Map<String, dynamic>.from(d['school']));
       if (d['current_academic_session'] != null) {
-        auth.setCurrentAcademicSession(
-            Map<String, dynamic>.from(d['current_academic_session']));
+        auth.setCurrentAcademicSession(Map<String, dynamic>.from(d['current_academic_session']));
       }
       if (d['current_academic_term'] != null) {
-        auth.setCurrentAcademicTerm(
-            Map<String, dynamic>.from(d['current_academic_term']));
+        auth.setCurrentAcademicTerm(Map<String, dynamic>.from(d['current_academic_term']));
       }
 
       if (d['roles'] != null) auth.setRoles(List<String>.from(d['roles']));
-      if (d['permissions'] != null)
-        auth.setPermissions(List<String>.from(d['permissions']));
+      if (d['permissions'] != null) auth.setPermissions(List<String>.from(d['permissions']));
 
       auth.ensureSelectedStudentInActiveBranch();
 
       if (onContextChanged != null) await onContextChanged();
 
-      // ✅ CLOSE SHEET AFTER SUCCESS
+      // CLOSE SHEET AFTER SUCCESS
       if (Navigator.canPop(sheetCtx)) Navigator.pop(sheetCtx);
 
-      Get.snackbar('Success', 'Switched to $branchName ($role)',
-          snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar('Success', 'Switched to $branchName ($role)', snackPosition: SnackPosition.BOTTOM);
+
+      // Force rebuild the dashboard with the new role data
+      Get.offAll(() => KiotaPayDashboard('0'));
+
     } catch (e) {
       Get.snackbar('Error', e.toString(), snackPosition: SnackPosition.BOTTOM);
     } finally {
@@ -638,6 +635,10 @@ Future<void> openContextSwitcher(
         'Switched to ${u['first_name'] ?? ''} ${u['last_name'] ?? ''}'.trim(),
         snackPosition: SnackPosition.BOTTOM,
       );
+
+      // Force rebuild the dashboard to reflect the new student's data
+      Get.offAll(() => KiotaPayDashboard('0'));
+
     } catch (e) {
       Get.snackbar('Error', e.toString(), snackPosition: SnackPosition.BOTTOM);
     } finally {
@@ -674,9 +675,7 @@ Future<void> openContextSwitcher(
                       children: [
                         Expanded(
                           child: Text(
-                            isParent
-                                ? 'Switch School / Student'
-                                : 'Switch Account',
+                            'Switch Account',
                             style: const TextStyle(
                                 fontSize: 16, fontWeight: FontWeight.w700),
                           ),
@@ -751,69 +750,60 @@ Future<void> openContextSwitcher(
                     ),
                     const SizedBox(height: 14),
 
-                    // -------- Parent View --------
-                    if (isParent) ...[
-                      // Branch selector (schools)
-                      Text('Schools',
-                          style: TextStyle(color: Colors.grey.shade700)),
-                      const SizedBox(height: 8),
-                      if (contexts.isEmpty)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          child: Text(
-                            'No schools found for this account.',
-                            style: TextStyle(color: Colors.grey.shade700),
+                    // -------- 1. Universal Account/Role Switcher --------
+                    Text('Available Accounts',
+                        style: TextStyle(color: Colors.grey.shade700)),
+                    const SizedBox(height: 8),
+                    if (contexts.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        child: Text(
+                          'No accounts found.',
+                          style: TextStyle(color: Colors.grey.shade700),
+                        ),
+                      )
+                    else
+                      ...contexts.expand((b) => b.roles.map((r) {
+                        final isActive = current?.branchId == b.branchId &&
+                            current?.role == r;
+
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: isActive
+                                  ? Theme.of(sheetCtx).colorScheme.primary
+                                  : Colors.grey.shade300,
+                            ),
+                            color: Colors.white,
                           ),
-                        )
-                      else
-                        ...contexts.map((b) {
-                          final isActive = activeBranchId == b.branchId;
+                          child: ListTile(
+                            title: Text(b.branchName),
+                            // Optional: capitalize the role for better UI
+                            subtitle: Text('Role: ${r[0].toUpperCase()}${r.substring(1)}'),
+                            trailing: isActive
+                                ? const Icon(Icons.check)
+                                : const Icon(Icons.chevron_right),
+                            onTap: isActive
+                                ? null
+                                : () async {
+                              // Pass 'r' exactly as it is mapped!
+                              await switchContextAndRefresh(
+                                sheetCtx: sheetCtx,
+                                branchId: b.branchId,
+                                role: r,
+                                branchName: b.branchName,
+                              );
+                            },
+                          ),
+                        );
+                      })),
 
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 8),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(
-                                color: isActive
-                                    ? Theme.of(sheetCtx).colorScheme.primary
-                                    : Colors.grey.shade300,
-                              ),
-                              color: Colors.white,
-                            ),
-                            child: ListTile(
-                              title: Text(
-                                b.branchName,
-                                style: TextStyle(
-                                    fontWeight: isActive
-                                        ? FontWeight.w700
-                                        : FontWeight.w600),
-                              ),
-                              subtitle: Text(isActive
-                                  ? 'Current school'
-                                  : 'Tap to switch'),
-                              trailing: isActive
-                                  ? const Icon(Icons.check)
-                                  : const Icon(Icons.chevron_right),
-                              onTap: isActive
-                                  ? null
-                                  : () async {
-                                      final roleSlug = (b.roles.isNotEmpty)
-                                          ? b.roles.first
-                                          : 'parent';
-                                      await switchContextAndRefresh(
-                                        sheetCtx: sheetCtx,
-                                        branchId: b.branchId,
-                                        role: roleSlug,
-                                        branchName: b.branchName,
-                                      );
-                                    },
-                            ),
-                          );
-                        }).toList(),
+                    const Divider(height: 22),
 
-                      const Divider(height: 22),
-
-                      // Student selector (filtered)
+                    // -------- 2. Parent Only: Student Switcher --------
+                    if (isParent) ...[
                       Text('Students',
                           style: TextStyle(color: Colors.grey.shade700)),
                       const SizedBox(height: 8),
@@ -851,10 +841,9 @@ Future<void> openContextSwitcher(
                                 onTap: !isActiveStudent
                                     ? null
                                     : () async {
-                                        // close the sheet after selection (optional)
-                                        Navigator.pop(sheetCtx);
-                                        await switchStudentAndRefresh(student);
-                                      },
+                                  Navigator.pop(sheetCtx);
+                                  await switchStudentAndRefresh(student);
+                                },
                                 leading: CircleAvatar(
                                   backgroundImage: NetworkImage(
                                     u['avatar'] != null
@@ -874,53 +863,11 @@ Future<void> openContextSwitcher(
                                 subtitle: Text(
                                     student['class']?['name'] ?? 'No class'),
                                 trailing:
-                                    isSelected ? const Icon(Icons.check) : null,
+                                isSelected ? const Icon(Icons.check) : null,
                               ),
                             ),
                           );
                         }).toList(),
-                    ],
-
-                    // -------- Non-parent View --------
-                    if (!isParent) ...[
-                      const SizedBox(height: 6),
-                      ...contexts.expand((b) => b.roles.map((r) {
-                            final isActive = current?.branchId == b.branchId &&
-                                current?.role == r;
-
-                            return Container(
-                              margin: const EdgeInsets.only(bottom: 8),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(14),
-                                border: Border.all(
-                                  color: isActive
-                                      ? Theme.of(sheetCtx).colorScheme.primary
-                                      : Colors.grey.shade300,
-                                ),
-                                color: Colors.white,
-                              ),
-                              child: ListTile(
-                                title: Text('${b.branchName}'),
-                                subtitle: Text('Role: $r'),
-                                trailing: isActive
-                                    ? const Icon(Icons.check)
-                                    : const Icon(Icons.chevron_right),
-                                onTap: isActive
-                                    ? null
-                                    : () async {
-                                        final roleSlug = (b.roles.isNotEmpty)
-                                            ? b.roles.first
-                                            : 'parent';
-                                        await switchContextAndRefresh(
-                                          sheetCtx: sheetCtx,
-                                          branchId: b.branchId,
-                                          role: roleSlug,
-                                          branchName: b.branchName,
-                                        );
-                                      },
-                              ),
-                            );
-                          })),
                     ],
                   ],
                 ),
@@ -990,14 +937,25 @@ int compareVersions(String v1, String v2) {
 void showUpdateDialog(BuildContext context) {
   showDialog(
     context: context,
-    barrierDismissible: false,
+    barrierDismissible: false, // still prevents tapping outside
     builder: (BuildContext context) {
       return WillPopScope(
-        onWillPop: () async => false,
+        onWillPop: () async => false, // prevents back button
         child: AlertDialog(
           title: const Text('Update Available'),
-          content: const Text('A new version of the app is available. Please update to the latest version.'),
+          content: const Text(
+            'A new version of the app is available. Please update to the latest version.',
+          ),
           actions: <Widget>[
+            /// Cancel Button
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop(); // 👈 close dialog
+              },
+            ),
+
+            /// Update Button
             TextButton(
               child: const Text('Update'),
               onPressed: () {
