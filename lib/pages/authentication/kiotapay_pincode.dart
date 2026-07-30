@@ -27,12 +27,18 @@ class _KiotaPaySetPinState extends State<KiotaPaySetPin> {
   late String _pinHeading = 'Create your PIN';
   String pinError = '';
   String pinSuccess = '';
-  final TextEditingController pinController = TextEditingController();
+  final PinInputController pinController = PinInputController();
   final _formKey = GlobalKey<FormState>();
 
   @override
   void initState() {
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    pinController.dispose();
+    super.dispose();
   }
 
   String encodeMobileUserServices(String apiKey, String pin, String apisecret) {
@@ -85,21 +91,16 @@ class _KiotaPaySetPinState extends State<KiotaPaySetPin> {
                 const SizedBox(height: 40),
                 SizedBox(
                   width: 222,
-                  child: PinCodeTextField(
+                  child:MaterialPinFormField(
                     length: 4,
-                    controller: pinController,
-                    appContext: context,
-                    autovalidateMode: AutovalidateMode.onUserInteraction,
-                    onChanged: (value) {},
-                    enableActiveFill: true,
-                    useExternalAutoFillGroup: true,
-                    //TRY BY SET FALSE HERE
-                    animationDuration: const Duration(milliseconds: 300),
-                    animationType: AnimationType.fade,
+                    pinController: pinController,
                     autoFocus: true,
-                    cursorColor: ChanzoColors.primary,
-                    keyboardType: TextInputType.number,
                     obscureText: true,
+                    keyboardType: TextInputType.number,
+                    onChanged: (value) {},
+                    onCompleted: (value) {
+                      // PIN entered
+                    },
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return "Please enter PIN";
@@ -113,8 +114,13 @@ class _KiotaPaySetPinState extends State<KiotaPaySetPin> {
                         return null;
                       }
                     },
+                    theme: const MaterialPinTheme(
+                      // entryAnimation: PinEntryAnimation.fade,
+                      obscuringCharacter: '●',
+                    ),
                   ),
                 ),
+
                 const SizedBox(height: 20),
                 Padding(
                   padding: const EdgeInsets.all(16.0),

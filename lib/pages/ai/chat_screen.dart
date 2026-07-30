@@ -7,7 +7,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:chanzo/globalclass/chanzo_color.dart';
 import 'package:chanzo/globalclass/global_methods.dart';
 import 'package:chanzo/globalclass/constants.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'chat_drawer.dart';
 

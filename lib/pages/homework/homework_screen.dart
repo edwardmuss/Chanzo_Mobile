@@ -524,7 +524,7 @@ class _HomeworkScreenState extends State<HomeworkScreen> {
 
   Future<File?> _pickFile() async {
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
+      FilePickerResult? result = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'txt'],
         allowMultiple: false,

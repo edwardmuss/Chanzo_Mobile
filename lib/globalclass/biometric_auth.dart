@@ -33,21 +33,16 @@ class KiotaPayBiometricAuth {
         localizedReason: 'Authenticate using biometrics',
         authMessages: const <AuthMessages>[
           AndroidAuthMessages(
-            signInTitle: "Chanzo Biometrics",
+            signInTitle: 'Chanzo Biometrics',
             cancelButton: 'No thanks',
-            // biometricHint: 'Use your device fingerprint or face ID',
-            biometricSuccess: 'Successfully logged in'
           ),
           IOSAuthMessages(
             cancelButton: 'No thanks',
           ),
         ],
-        options: const AuthenticationOptions(
-          useErrorDialogs: true,
-          stickyAuth: true,
-          biometricOnly: false,
-          sensitiveTransaction: true,
-        ),
+        biometricOnly: false,
+        sensitiveTransaction: true,
+        persistAcrossBackgrounding: true,
       );
     } on PlatformException {
       return false;
