@@ -27,7 +27,7 @@ class NotificationService {
 
     // 1. FOREGROUND TAP: Handle when a user taps the local notification popup
     await _notificationsPlugin.initialize(
-      initializationSettings,
+      settings: initializationSettings,
       onDidReceiveNotificationResponse: (details) {
         Get.to(() => NotificationScreen());
       },
@@ -129,10 +129,10 @@ class NotificationService {
     );
 
     await _notificationsPlugin.show(
-      message.hashCode, // Use a unique ID based on the message
-      message.notification?.title,
-      message.notification?.body,
-      platformChannelSpecifics,
+      id: message.hashCode,
+      title: message.notification?.title,
+      body: message.notification?.body,
+      notificationDetails: platformChannelSpecifics,
     );
 
     // Play sound

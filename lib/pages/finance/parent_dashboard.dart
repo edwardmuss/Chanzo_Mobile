@@ -4,7 +4,7 @@ import 'package:chanzo/globalclass/chanzo_color.dart';
 import 'package:chanzo/globalclass/fontstyle.dart';
 import 'package:chanzo/pages/fees/fee_structure_screen.dart';
 import 'package:chanzo/theme/theme_controller.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:shimmer/shimmer.dart';
 

@@ -63,26 +63,36 @@ class _FormativeAssessmentScreenState extends State<FormativeAssessmentScreen> {
 
       if (response.statusCode == 200 && response.data['success'] == true) {
         final data = response.data['data'];
+        final int? serverStreamId = data['selected_stream_id'];
+
+        // KEY FIX: If this was the initial load (no streamId passed) and the
+        // server returned a default selected stream, we MUST re-fetch with that
+        // stream_id. Without this, the students returned are from an unfiltered
+        // context and will be rejected by the server when we submit with the
+        // stream_id it echoed back.
+        if (streamId == null && serverStreamId != null) {
+          _fetchData(streamId: serverStreamId);
+          return;
+        }
 
         setState(() {
           _activityInfo = data['activity'] ?? {};
           _streams = data['streams'] ?? [];
           _students = data['students'] ?? [];
-          _selectedStreamId = data['selected_stream_id'];
+          _selectedStreamId = streamId ?? serverStreamId;
 
-          // Initialize controllers and pre-fill existing marks!
+          // Clear stale marks from any previously loaded stream before re-filling.
+          _studentScores.clear();
+          for (var controller in _studentComments.values) {
+            controller.dispose();
+          }
+          _studentComments.clear();
+
+          // Initialize controllers and pre-fill existing marks
           for (var student in _students) {
             final sId = student['id'];
-
-            // Pre-fill the score dropdown (or null if they haven't been graded yet)
             _studentScores[sId] = student['score'];
-
-            // Pre-fill the comment text field
-            if (!_studentComments.containsKey(sId)) {
-              _studentComments[sId] = TextEditingController(text: student['comments'] ?? '');
-            } else {
-              _studentComments[sId]!.text = student['comments'] ?? '';
-            }
+            _studentComments[sId] = TextEditingController(text: student['comments'] ?? '');
           }
 
           _isLoading = false;
@@ -140,13 +150,62 @@ class _FormativeAssessmentScreenState extends State<FormativeAssessmentScreen> {
       );
 
       if (response.statusCode == 200 && response.data['success'] == true) {
-        Get.back(result: true);
-        Get.snackbar('Success', 'Marks saved successfully!', backgroundColor: Colors.green, colorText: Colors.white);
+        if (mounted) {
+          await showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (ctx) => AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade50,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.check_circle_rounded, color: Colors.green, size: 56),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Marks Saved!',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Results have been successfully recorded.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      onPressed: () {
+                        Navigator.of(ctx).pop();
+                        Get.back(result: true);
+                      },
+                      child: const Text('Done'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
       }
     } catch (e) {
-      Get.snackbar('Error', 'Failed to save marks. Please try again.', backgroundColor: Colors.red, colorText: Colors.white);
+      Get.snackbar('Error', 'Failed to save marks. Please try again.',
+          backgroundColor: Colors.red, colorText: Colors.white);
     } finally {
-      setState(() => _isSaving = false);
+      if (mounted) setState(() => _isSaving = false);
     }
   }
 

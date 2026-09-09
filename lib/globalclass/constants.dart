@@ -10,7 +10,7 @@ class KiotaPayConstants {
 
   /// Mutable baseUrl (changes when country changes)
   static String baseUrl = isLive
-      ? 'https://app.chanzo.co.ke/api/v1/'
+      ? 'https://go.chanzo.co.ke/api/v1/'
       : 'https://antelope-refined-nicely.ngrok-free.app/api/v1/';
 
   /// Always derived from baseUrl

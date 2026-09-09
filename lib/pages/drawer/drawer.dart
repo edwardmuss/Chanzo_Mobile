@@ -27,7 +27,7 @@ import 'package:chanzo/pages/settings/settings.dart';
 import 'package:chanzo/pages/notice_board/notice_board_screen.dart';
 import 'package:chanzo/pages/timetable/timetable_screen.dart';
 import 'package:chanzo/theme/theme_controller.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:nb_utils/nb_utils.dart' hide DialogType;
 import 'package:shared_preferences/shared_preferences.dart';
 

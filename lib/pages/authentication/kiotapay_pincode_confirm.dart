@@ -33,13 +33,19 @@ class _KiotaPayPinConfirmState extends State<KiotaPayPinConfirm> {
   late String _pinHeading = 'Confirm PIN';
   String pinError = '';
   String pinSuccess = '';
-  final TextEditingController pinController = TextEditingController();
+  final PinInputController pinController = PinInputController();
   final _formKey = GlobalKey<FormState>();
 
   @override
   void initState() {
     super.initState();
 
+  }
+
+  @override
+  void dispose() {
+    pinController.dispose();
+    super.dispose();
   }
 
   String hashedKey(String apiKey, String pin, String apisecret) {
@@ -152,37 +158,34 @@ class _KiotaPayPinConfirmState extends State<KiotaPayPinConfirm> {
                 const SizedBox(height: 40),
                 SizedBox(
                   width: 222,
-                  child: PinCodeTextField(
+                  child: MaterialPinFormField(
                     length: 4,
-                    controller: pinController,
-                    appContext: context,
+                    pinController: pinController,
                     autovalidateMode: AutovalidateMode.onUserInteraction,
-                    onChanged: (value) {},
-                    enableActiveFill: true,
-                    useExternalAutoFillGroup: true,
-                    //TRY BY SET FALSE HERE
-                    animationDuration: const Duration(milliseconds: 300),
-                    animationType: AnimationType.fade,
                     autoFocus: true,
-                    cursorColor: ChanzoColors.primary,
                     keyboardType: TextInputType.number,
                     obscureText: true,
-                    // obscuringWidget: Text('*', style: pbold_hmd,),
+                    onChanged: (value) {
+                      // Optional
+                    },
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return "Please enter PIN";
+                        return 'Please enter PIN';
                       }
+
                       if (value.length < 4) {
-                        return "The Pin MUST be 4 digits";
+                        return 'The PIN must be 4 digits';
                       }
-                      if(widget.pin != value){
-                        return "PIN and Confirm PIN did not Match";
+
+                      if (widget.pin != value) {
+                        return 'PIN and Confirm PIN did not Match';
                       }
+
                       if (int.tryParse(value) == null) {
-                        return "Only Numeric characters are allowed";
-                      } else {
-                        return null;
+                        return 'Only numeric characters are allowed';
                       }
+
+                      return null;
                     },
                   ),
                 ),

@@ -6,7 +6,7 @@ import 'package:flutter_html/flutter_html.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:chanzo/globalclass/chanzo_color.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../../globalclass/global_methods.dart';

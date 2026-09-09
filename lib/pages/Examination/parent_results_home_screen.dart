@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:chanzo/globalclass/global_classes.dart';
 import 'package:chanzo/pages/Examination/student_analytics.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../globalclass/chanzo_color.dart';
 import '../../globalclass/global_methods.dart';
