@@ -11,6 +11,7 @@
 #include <file_selector_windows/file_selector_windows.h>
 #include <firebase_core/firebase_core_plugin_c_api.h>
 #include <flutter_secure_storage_windows/flutter_secure_storage_windows_plugin.h>
+#include <geolocator_windows/geolocator_windows.h>
 #include <in_app_idle_detector/in_app_idle_detector_plugin_c_api.h>
 #include <local_auth_windows/local_auth_plugin.h>
 #include <nb_utils/nb_utils_plugin_c_api.h>
@@ -31,6 +32,8 @@ void RegisterPlugins(flutter::PluginRegistry* registry) {
       registry->GetRegistrarForPlugin("FirebaseCorePluginCApi"));
   FlutterSecureStorageWindowsPluginRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("FlutterSecureStorageWindowsPlugin"));
+  GeolocatorWindowsRegisterWithRegistrar(
+      registry->GetRegistrarForPlugin("GeolocatorWindows"));
   InAppIdleDetectorPluginCApiRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("InAppIdleDetectorPluginCApi"));
   LocalAuthPluginRegisterWithRegistrar(

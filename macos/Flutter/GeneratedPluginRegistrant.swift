@@ -15,6 +15,7 @@ import firebase_messaging
 import flutter_contacts
 import flutter_local_notifications
 import flutter_secure_storage_darwin
+import geolocator_apple
 import in_app_idle_detector
 import local_auth_darwin
 import nb_utils
@@ -38,6 +39,7 @@ func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
   FlutterContactsPlugin.register(with: registry.registrar(forPlugin: "FlutterContactsPlugin"))
   FlutterLocalNotificationsPlugin.register(with: registry.registrar(forPlugin: "FlutterLocalNotificationsPlugin"))
   FlutterSecureStorageDarwinPlugin.register(with: registry.registrar(forPlugin: "FlutterSecureStorageDarwinPlugin"))
+  GeolocatorPlugin.register(with: registry.registrar(forPlugin: "GeolocatorPlugin"))
   InAppIdleDetectorPlugin.register(with: registry.registrar(forPlugin: "InAppIdleDetectorPlugin"))
   LocalAuthPlugin.register(with: registry.registrar(forPlugin: "LocalAuthPlugin"))
   NbUtilsPlugin.register(with: registry.registrar(forPlugin: "NbUtilsPlugin"))

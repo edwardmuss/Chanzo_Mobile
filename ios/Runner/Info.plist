@@ -42,6 +42,10 @@
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
+
+	<key>NSLocationWhenInUseUsageDescription</key>
+    <string>Used to show the school where the bus is while a run is in progress.</string>
+
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>

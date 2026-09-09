@@ -1,3 +1,4 @@
+import 'package:chanzo/pages/transport/transport_menu_controller.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:in_app_idle_detector/in_app_idle_detector.dart';
@@ -72,6 +73,7 @@ Future<void> main() async {
 
   // Register AuthController so it's available everywhere
   Get.put(AuthController());
+  Get.put(TransportMenuController(), permanent: true);
   // Get.put<Box<Payment>>(paymentBox);
 
   SystemChrome.setPreferredOrientations(

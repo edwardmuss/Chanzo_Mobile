@@ -46,6 +46,9 @@ import '../authentication/AuthController.dart';
 import '../resource_center/resource_center_screen.dart';
 import '../teachers/lesson_plan/lesson_plan_screen.dart';
 import '../timetable/timetable_filter_screen.dart';
+import '../transport/crew_runs_screen.dart';
+import '../transport/parent_transport_screen.dart';
+import '../transport/transport_menu_controller.dart';
 
 class KiotaPayDrawer extends StatefulWidget {
   const KiotaPayDrawer({super.key});
@@ -107,7 +110,7 @@ class _KiotaPayDrawerState extends State<KiotaPayDrawer> {
                 Obx(() => SizedBox(
                       height: authController.isStudentListExpanded.value
                           ? _calculateStudentListHeight(
-                            authController.studentsInActiveBranch.length)
+                              authController.studentsInActiveBranch.length)
                           : 0,
                     )),
 
@@ -157,7 +160,8 @@ class _KiotaPayDrawerState extends State<KiotaPayDrawer> {
             // 2. Safely toggle between NetworkImage and AssetImage
             image: DecorationImage(
               image: (coverImage != null && coverImage.toString().isNotEmpty)
-                  ? NetworkImage('${KiotaPayConstants.webUrl}storage/$coverImage')
+                  ? NetworkImage(
+                      '${KiotaPayConstants.webUrl}storage/$coverImage')
                   : AssetImage(KiotaPayPngimage.card) as ImageProvider,
               fit: BoxFit.cover,
             ),
@@ -173,13 +177,17 @@ class _KiotaPayDrawerState extends State<KiotaPayDrawer> {
                     CircleAvatar(
                       radius: 50,
                       backgroundColor: Colors.grey.shade300,
-                      backgroundImage: (avatar != null && avatar.toString().isNotEmpty)
-                          ? NetworkImage('${KiotaPayConstants.webUrl}storage/$avatar')
-                          : AssetImage(KiotaPayPngimage.profile) as ImageProvider,
+                      backgroundImage:
+                          (avatar != null && avatar.toString().isNotEmpty)
+                              ? NetworkImage(
+                                  '${KiotaPayConstants.webUrl}storage/$avatar')
+                              : AssetImage(KiotaPayPngimage.profile)
+                                  as ImageProvider,
                     ),
                     if (isParent && authController.selectedStudent.isNotEmpty)
                       Container(
-                        padding: const EdgeInsets.all(4), // Slightly smaller padding looks better
+                        padding: const EdgeInsets.all(4),
+                        // Slightly smaller padding looks better
                         decoration: BoxDecoration(
                           color: ChanzoColors.primary,
                           shape: BoxShape.circle,
@@ -189,11 +197,15 @@ class _KiotaPayDrawerState extends State<KiotaPayDrawer> {
                           ),
                         ),
                         child: CircleAvatar(
-                          radius: 14, // Slightly larger radius for the nested avatar
+                          radius: 14,
+                          // Slightly larger radius for the nested avatar
                           backgroundColor: Colors.grey.shade300,
-                          backgroundImage: (studentAvatar != null && studentAvatar.toString().isNotEmpty)
-                              ? NetworkImage('${KiotaPayConstants.webUrl}storage/$studentAvatar')
-                              : AssetImage(KiotaPayPngimage.profile) as ImageProvider,
+                          backgroundImage: (studentAvatar != null &&
+                                  studentAvatar.toString().isNotEmpty)
+                              ? NetworkImage(
+                                  '${KiotaPayConstants.webUrl}storage/$studentAvatar')
+                              : AssetImage(KiotaPayPngimage.profile)
+                                  as ImageProvider,
                         ),
                       ),
                   ],
@@ -274,6 +286,7 @@ class _KiotaPayDrawerState extends State<KiotaPayDrawer> {
                 authController.isStudentListExpanded.value = false;
                 await refreshUserProfile(context);
                 await Get.find<PerformanceController>().refreshData();
+                Get.find<TransportMenuController>().refreshProfile();
 
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -326,12 +339,17 @@ class _KiotaPayDrawerState extends State<KiotaPayDrawer> {
     final isTeacher = authController.userRole == 'teacher';
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     // Set dynamic default colors based on the theme
-    final Color defaultIconBg = isDark ? Colors.white12 : ChanzoColors.primary20;
+    final Color defaultIconBg =
+        isDark ? Colors.white12 : ChanzoColors.primary20;
     // Orange for dark mode, Primary for light mode
-    final Color defaultIconColor = isDark ? ChanzoColors.secondary : ChanzoColors.primary;
-    final Color defaultChevronColor = isDark ? Colors.white54 : ChanzoColors.primary;
-    final Color defaultTextColor = isDark ? Colors.white : ChanzoColors.textgrey;
-    final Color defaultSplashColor = isDark ? ChanzoColors.secondary.withOpacity(0.3) : ChanzoColors.primary;
+    final Color defaultIconColor =
+        isDark ? ChanzoColors.secondary : ChanzoColors.primary;
+    final Color defaultChevronColor =
+        isDark ? Colors.white54 : ChanzoColors.primary;
+    final Color defaultTextColor =
+        isDark ? Colors.white : ChanzoColors.textgrey;
+    final Color defaultSplashColor =
+        isDark ? ChanzoColors.secondary.withOpacity(0.3) : ChanzoColors.primary;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 0),
@@ -426,53 +444,72 @@ class _KiotaPayDrawerState extends State<KiotaPayDrawer> {
                 ),
               ),
               child: ExpansionTile(
-                shape: Border(),              // removes top/bottom border
-                collapsedShape: Border(),     // removes collapsed border
+                shape: Border(),
+                // removes top/bottom border
+                collapsedShape: Border(),
+                // removes collapsed border
                 // tilePadding: EdgeInsets.zero, // prevents double padding
                 leading: ClipOval(
                   child: Container(
                     color: defaultIconBg,
                     width: 40,
                     height: 40,
-                    child: Icon(Icons.assessment_outlined, size: 20, color: defaultIconColor),
+                    child: Icon(Icons.assessment_outlined,
+                        size: 20, color: defaultIconColor),
                   ),
                 ),
-                title: Text('Assessments', style: pregular_md.copyWith(color: defaultTextColor)),
+                title: Text('Assessments',
+                    style: pregular_md.copyWith(color: defaultTextColor)),
                 childrenPadding: const EdgeInsets.only(left: 16),
                 children: [
-              
                   /// --- Assessment Types ---
                   ExpansionTile(
-                    title: Text('Assessment Types', style: pregular_md.copyWith(color: defaultTextColor)),
+                    title: Text('Assessment Types',
+                        style: pregular_md.copyWith(color: defaultTextColor)),
                     childrenPadding: const EdgeInsets.only(left: 40),
                     children: [
                       ListTile(
-                        title: Text('Formative Assessments', style: pregular_md.copyWith(color: defaultTextColor)),
-                        onTap: () => Get.to(() => const FormativeDashboardScreen()),
+                        title: Text('Formative Assessments',
+                            style:
+                                pregular_md.copyWith(color: defaultTextColor)),
+                        onTap: () =>
+                            Get.to(() => const FormativeDashboardScreen()),
                       ),
                       ListTile(
-                        title: Text('Summative Exams', style: pregular_md.copyWith(color: defaultTextColor)),
+                        title: Text('Summative Exams',
+                            style:
+                                pregular_md.copyWith(color: defaultTextColor)),
                         onTap: () => Get.to(() => const ExamsDashboardScreen()),
                       ),
                     ],
                   ),
-              
+
                   /// --- Performance Reports ---
                   ExpansionTile(
-                    title: Text('Performance Reports', style: pregular_md.copyWith(color: defaultTextColor)),
+                    title: Text('Performance Reports',
+                        style: pregular_md.copyWith(color: defaultTextColor)),
                     childrenPadding: const EdgeInsets.only(left: 40),
                     children: [
                       ListTile(
-                        title: Text('Class Performance', style: pregular_md.copyWith(color: defaultTextColor)),
-                        onTap: () => Get.to(() => const ClassExamPerformanceScreen()),
+                        title: Text('Class Performance',
+                            style:
+                                pregular_md.copyWith(color: defaultTextColor)),
+                        onTap: () =>
+                            Get.to(() => const ClassExamPerformanceScreen()),
                       ),
                       ListTile(
-                        title: Text('Subject Performance', style: pregular_md.copyWith(color: defaultTextColor)),
-                        onTap: () => Get.to(() => const SubjectPerformanceScreen()),
+                        title: Text('Subject Performance',
+                            style:
+                                pregular_md.copyWith(color: defaultTextColor)),
+                        onTap: () =>
+                            Get.to(() => const SubjectPerformanceScreen()),
                       ),
                       ListTile(
-                        title: Text('Class Stream Report', style: pregular_md.copyWith(color: defaultTextColor)),
-                        onTap: () => Get.to(() => const ClassStreamPerformanceScreen()),
+                        title: Text('Class Stream Report',
+                            style:
+                                pregular_md.copyWith(color: defaultTextColor)),
+                        onTap: () =>
+                            Get.to(() => const ClassStreamPerformanceScreen()),
                       ),
                     ],
                   ),
@@ -506,35 +543,39 @@ class _KiotaPayDrawerState extends State<KiotaPayDrawer> {
                 onPressed: () {
                   Navigator.pop(context);
                   Get.to(() => TimetableScreen(
-                    classId: authController.selectedStudentClassId,
-                    streamId: authController.selectedStudentStreamId,
-                    isTeacherTimetable: false,
-                  ));
+                        classId: authController.selectedStudentClassId,
+                        streamId: authController.selectedStudentStreamId,
+                        isTeacherTimetable: false,
+                      ));
                 },
                 icon: Icons.history,
                 label: 'Timetable',
               )
             else if (isTeacher)
               Theme(
-                data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                data: Theme.of(context)
+                    .copyWith(dividerColor: Colors.transparent),
                 child: ExpansionTile(
                   leading: ClipOval(
                     child: Container(
                       color: defaultIconBg,
                       width: 40,
                       height: 40,
-                      child: Icon(Icons.history, size: 20, color: defaultIconColor),
+                      child: Icon(Icons.history,
+                          size: 20, color: defaultIconColor),
                     ),
                   ),
                   title: Text(
                     'Timetables',
                     style: pregular_md.copyWith(color: defaultTextColor),
                   ),
-                  childrenPadding: const EdgeInsets.only(left: 56), // Indent sub-items
+                  childrenPadding: const EdgeInsets.only(left: 56),
+                  // Indent sub-items
                   children: [
                     ListTile(
                       dense: true,
-                      title: Text('My Timetable', style: pregular_md.copyWith(color: defaultTextColor)),
+                      title: Text('My Timetable',
+                          style: pregular_md.copyWith(color: defaultTextColor)),
                       onTap: () {
                         Navigator.pop(context); // Close Drawer
                         Get.offAll(() => KiotaPayDashboard('2'));
@@ -545,10 +586,14 @@ class _KiotaPayDrawerState extends State<KiotaPayDrawer> {
                     ),
                     ListTile(
                       dense: true,
-                      title: Text('Class Timetables', style: pregular_md.copyWith(color: defaultTextColor),),
+                      title: Text(
+                        'Class Timetables',
+                        style: pregular_md.copyWith(color: defaultTextColor),
+                      ),
                       onTap: () {
                         Navigator.pop(context); // Close Drawer
-                        Get.to(() => const TimetableFilterScreen()); // Go to filter screen
+                        Get.to(() =>
+                            const TimetableFilterScreen()); // Go to filter screen
                       },
                     ),
                   ],
@@ -609,6 +654,27 @@ class _KiotaPayDrawerState extends State<KiotaPayDrawer> {
               label: 'Scheme of Work',
             ),
 
+          // --- TRANSPORT ---
+          Obx(() {
+            final t = Get.find<TransportMenuController>();
+            t.ensureLoaded();
+
+            return Column(children: [
+              if (t.isParent.value)
+                TextIconButton(
+                  onPressed: () => Get.to(() => const ParentTransportScreen()),
+                  icon: Icons.directions_bus_filled_outlined,
+                  label: 'School bus',
+                ),
+              if (t.isCrew.value)
+                TextIconButton(
+                  onPressed: () => Get.to(() => const CrewRunsScreen()),
+                  icon: Icons.route_outlined,
+                  label: 'My runs',
+                ),
+            ]);
+          }),
+
           // ==========================================
           // UNIVERSAL BOTTOM MENU (Settings/Logout)
           // ==========================================
@@ -624,17 +690,20 @@ class _KiotaPayDrawerState extends State<KiotaPayDrawer> {
                   child: SizedBox(
                     width: 40,
                     height: 40,
-                    child: Icon(Icons.dark_mode, size: 20, color: defaultIconColor),
+                    child: Icon(Icons.dark_mode,
+                        size: 20, color: defaultIconColor),
                   ),
                 ),
               ),
             ),
-            title: Text("Dark Mode", style: pregular_md.copyWith(color: defaultTextColor)),
+            title: Text("Dark Mode",
+                style: pregular_md.copyWith(color: defaultTextColor)),
             trailing: Obx(() => Switch(
-              activeColor: ChanzoColors.primary,
-              onChanged: (state) => Get.find<KiotaPayThemecontroler>().toggleTheme(),
-              value: Get.find<KiotaPayThemecontroler>().isdark.value,
-            )),
+                  activeColor: ChanzoColors.primary,
+                  onChanged: (state) =>
+                      Get.find<KiotaPayThemecontroler>().toggleTheme(),
+                  value: Get.find<KiotaPayThemecontroler>().isdark.value,
+                )),
           ),
 
           TextIconButton(
