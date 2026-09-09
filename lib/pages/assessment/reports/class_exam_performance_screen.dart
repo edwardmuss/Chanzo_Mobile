@@ -71,7 +71,8 @@ class _ClassExamPerformanceScreenState extends State<ClassExamPerformanceScreen>
           _selectedTermId = data['selected_term_id'];
           _selectedExamId = data['selected_exam_id'];
           _selectedClassId = data['selected_class_id'];
-          _selectedStreamId = data['selected_stream_id'];
+          final rawStreamId = data['selected_stream_id'];
+          _selectedStreamId = (rawStreamId == null || rawStreamId == 0) ? null : rawStreamId;
 
           if (_selectedSessionId != null) _updateTerms(_selectedSessionId!);
           if (_selectedTermId != null) _updateExams(_selectedTermId!);
