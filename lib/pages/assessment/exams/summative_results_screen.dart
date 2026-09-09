@@ -52,6 +52,7 @@ class _SummativeResultsScreenState extends State<SummativeResultsScreen> {
   }
 
   Future<void> _fetchData({int? streamId}) async {
+    if (!mounted) return;
     setState(() {
       _isLoading = true;
       _hasError = false;
@@ -66,47 +67,46 @@ class _SummativeResultsScreenState extends State<SummativeResultsScreen> {
         queryParameters: queryParams.isNotEmpty ? queryParams : null,
       );
 
+      if (!mounted) return;
+
       if (response.statusCode == 200 && response.data['success'] == true) {
         final data = response.data['data'];
+
+        // Clear stale controllers before re-filling for a new stream
+        for (var c in _studentScores.values) { c.dispose(); }
+        for (var c in _studentComments.values) { c.dispose(); }
+        _studentScores.clear();
+        _studentComments.clear();
 
         setState(() {
           _examInfo = data['exam'] ?? {};
           _paperInfo = data['exam_paper'] ?? {};
           _streams = data['streams'] ?? [];
           _students = data['students'] ?? [];
-          _selectedStreamId = data['selected_stream_id'];
+          // Treat 0 (server's "no stream" sentinel) as null so the dropdown
+          // starts unselected instead of crashing with a missing item error.
+          final rawStreamId = data['selected_stream_id'];
+          _selectedStreamId = (rawStreamId == null || rawStreamId == 0) ? null : rawStreamId;
           _subject = data['subject'];
           _class = data['class'];
 
           // Parse max score safely
           _maxScore = int.tryParse(_paperInfo['max_marks']?.toString() ?? '100') ?? 100;
 
-          // Initialize controllers and PRE-FILL existing marks!
+          // Initialize controllers and pre-fill existing marks
           for (var student in _students) {
             final sId = student['id'];
-            final existingScore = student['score']?.toString() ?? '';
-            final existingComment = student['comments'] ?? '';
-
-            if (!_studentScores.containsKey(sId)) {
-              _studentScores[sId] = TextEditingController(text: existingScore);
-            } else {
-              _studentScores[sId]!.text = existingScore;
-            }
-
-            if (!_studentComments.containsKey(sId)) {
-              _studentComments[sId] = TextEditingController(text: existingComment);
-            } else {
-              _studentComments[sId]!.text = existingComment;
-            }
+            _studentScores[sId] = TextEditingController(text: student['score']?.toString() ?? '');
+            _studentComments[sId] = TextEditingController(text: student['comments'] ?? '');
           }
 
           _isLoading = false;
         });
       } else {
-        setState(() => _hasError = true);
+        if (mounted) setState(() => _hasError = true);
       }
     } catch (e) {
-      setState(() => _hasError = true);
+      if (mounted) setState(() => _hasError = true);
     } finally {
       if (mounted && _isLoading) setState(() => _isLoading = false);
     }
@@ -166,13 +166,60 @@ class _SummativeResultsScreenState extends State<SummativeResultsScreen> {
       );
 
       if (response.statusCode == 200 && response.data['success'] == true) {
-        Get.back(result: true);
-        Get.snackbar('Success', 'Exam marks saved successfully!', backgroundColor: Colors.green, colorText: Colors.white);
+        if (mounted) {
+          await showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (ctx) => AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade50,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.check_circle_rounded, color: Colors.green, size: 56),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Marks Saved!',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Exam results have been successfully recorded.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      onPressed: () {
+                        Navigator.of(ctx).pop();
+                        Get.back(result: true);
+                      },
+                      child: const Text('Done'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
       } else if (response.data['success'] == false) {
         Get.snackbar('Error', response.data['message'] ?? 'Failed to save marks.', backgroundColor: Colors.red, colorText: Colors.white);
       }
     } on DioException catch (e) {
-      // Safely extract API error message
       String errorMsg = 'Failed to save marks. Please try again.';
       if (e.response != null && e.response?.data != null && e.response?.data is Map) {
         errorMsg = e.response!.data['message'] ?? errorMsg;
@@ -181,7 +228,7 @@ class _SummativeResultsScreenState extends State<SummativeResultsScreen> {
     } catch (e) {
       Get.snackbar('Error', 'An unexpected error occurred.', backgroundColor: Colors.red, colorText: Colors.white);
     } finally {
-      setState(() => _isSaving = false);
+      if (mounted) setState(() => _isSaving = false);
     }
   }
 

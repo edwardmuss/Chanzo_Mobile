@@ -12,6 +12,9 @@ import '../../globalclass/constants.dart';
 
 class FCMTokenManager {
   static Future<void> handleToken(String? token) async {
+    // FCM only for mobile; skip early so Linux/desktop login does not touch Firebase.
+    if (!Platform.isAndroid && !Platform.isIOS) return;
+
     // Get current token
     token ??= await FirebaseMessaging.instance.getToken();
 
@@ -26,12 +29,10 @@ class FCMTokenManager {
       AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
       deviceId = androidInfo.id;
       platform = 'android';
-    } else if (Platform.isIOS) {
+    } else {
       IosDeviceInfo iosInfo = await deviceInfo.iosInfo;
       deviceId = iosInfo.identifierForVendor!;
       platform = 'ios';
-    } else {
-      return;
     }
 
     // Send to backend
